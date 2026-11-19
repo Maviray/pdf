@@ -63,6 +63,20 @@ public sealed class PdfDocumentWriterTests
     }
 
     [Fact]
+    public void EndingAnotherPageWhileOneIsOpenThrows()
+    {
+        using var document = new PdfDocumentWriter(new MemoryStream());
+        using var other = new PdfDocumentWriter(new MemoryStream());
+        var ended = document.BeginPage(A4Width, A4Height);
+        document.EndPage(ended);
+        document.BeginPage(A4Width, A4Height);
+        var foreign = other.BeginPage(A4Width, A4Height);
+
+        Assert.Throws<InvalidOperationException>(() => document.EndPage(ended));
+        Assert.Throws<InvalidOperationException>(() => document.EndPage(foreign));
+    }
+
+    [Fact]
     public void ClosingWithAPageOpenThrows()
     {
         using var document = new PdfDocumentWriter(new MemoryStream());

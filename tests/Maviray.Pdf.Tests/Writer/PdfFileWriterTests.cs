@@ -139,6 +139,30 @@ public sealed class PdfFileWriterTests
     }
 
     [Fact]
+    public void AFailedWriteFaultsTheWriter()
+    {
+        using var writer = new PdfFileWriter(new MemoryStream(), new PdfWriterOptions());
+        var root = writer.Write(new PdfDictionary());
+        var dictionary = new PdfDictionary();
+        var stream = new PdfStream(dictionary, "data"u8.ToArray());
+        dictionary.Set(PdfName.Length, new PdfInteger(4)); // the stream now refuses to be written
+        Assert.Throws<InvalidOperationException>(() => writer.Write(stream));
+
+        var error = Assert.Throws<InvalidOperationException>(() => writer.Close(root));
+
+        Assert.Contains("incomplete", error.Message, StringComparison.Ordinal);
+        Assert.Throws<InvalidOperationException>(writer.Reserve);
+    }
+
+    [Fact]
+    public void RefusesAnUndefinedCompressionLevel()
+    {
+        var options = new PdfWriterOptions { CompressionLevel = (System.IO.Compression.CompressionLevel)99 };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new PdfFileWriter(new MemoryStream(), options));
+    }
+
+    [Fact]
     public void DisposeLeavesTheDestinationOpen()
     {
         var destination = new MemoryStream();

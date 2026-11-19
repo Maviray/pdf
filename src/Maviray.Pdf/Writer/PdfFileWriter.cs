@@ -22,7 +22,12 @@ internal sealed class PdfFileWriter : IDisposable
     private readonly List<long> _offsets = [-1];
     private bool _closed;
 
+    // Set when a write or close threw part-way. The file then holds a partial object, so nothing more may be written:
+    // a Close that succeeded would hand back a broken file as if it were complete.
+    private bool _faulted;
+
     /// <exception cref="ArgumentException"><see cref="PdfWriterOptions.FileId"/> is set but isn't 16 bytes long.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="PdfWriterOptions.CompressionLevel"/> isn't a defined value.</exception>
     public PdfFileWriter(Stream destination, PdfWriterOptions options)
     {
         ArgumentNullException.ThrowIfNull(destination);
@@ -30,6 +35,11 @@ internal sealed class PdfFileWriter : IDisposable
         if (options.FileId is { Length: not 16 })
         {
             throw new ArgumentException("The file ID must be exactly 16 bytes.", nameof(options));
+        }
+
+        if (!Enum.IsDefined(options.CompressionLevel))
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.CompressionLevel, "The compression level isn't a defined value.");
         }
 
         _options = options;
@@ -80,19 +90,27 @@ internal sealed class PdfFileWriter : IDisposable
             throw new InvalidOperationException($"Object {number} has already been written.");
         }
 
-        _offsets[number] = _output.Position;
-        _output.WriteInteger(number);
-        _output.Write(" 0 obj\n"u8);
-        if (value is PdfStream stream && _options.CompressionLevel != CompressionLevel.NoCompression)
+        try
         {
-            WriteCompressed(stream);
-        }
-        else
-        {
-            value.WriteTo(_output);
-        }
+            _offsets[number] = _output.Position;
+            _output.WriteInteger(number);
+            _output.Write(" 0 obj\n"u8);
+            if (value is PdfStream stream && _options.CompressionLevel != CompressionLevel.NoCompression)
+            {
+                WriteCompressed(stream);
+            }
+            else
+            {
+                value.WriteTo(_output);
+            }
 
-        _output.Write("\nendobj\n"u8);
+            _output.Write("\nendobj\n"u8);
+        }
+        catch
+        {
+            _faulted = true;
+            throw;
+        }
     }
 
     /// <summary>
@@ -117,6 +135,24 @@ internal sealed class PdfFileWriter : IDisposable
             throw new InvalidOperationException($"The root, object {root.ObjectNumber}, was never written by this writer.");
         }
 
+        try
+        {
+            WriteCrossReferenceAndTrailer(root);
+        }
+        catch
+        {
+            _faulted = true;
+            throw;
+        }
+
+        _closed = true;
+    }
+
+    /// <summary>Returns the output's buffer. Disposing without <see cref="Close"/> leaves an incomplete file.</summary>
+    public void Dispose() => _output.Dispose();
+
+    private void WriteCrossReferenceAndTrailer(PdfReference root)
+    {
         var xref = _output.Position;
         _output.Write("xref\n0 "u8);
         _output.WriteInteger(_offsets.Count);
@@ -139,11 +175,7 @@ internal sealed class PdfFileWriter : IDisposable
         _output.WriteInteger(xref);
         _output.Write("\n%%EOF\n"u8);
         _output.Flush();
-        _closed = true;
     }
-
-    /// <summary>Returns the output's buffer. Disposing without <see cref="Close"/> leaves an incomplete file.</summary>
-    public void Dispose() => _output.Dispose();
 
     // Flate is zlib (RFC 1950) data, which is what ZLibStream writes (spec D-08).
     private void WriteCompressed(PdfStream stream)
@@ -171,6 +203,11 @@ internal sealed class PdfFileWriter : IDisposable
 
     private void ThrowIfClosed()
     {
+        if (_faulted)
+        {
+            throw new InvalidOperationException("An earlier write failed part-way, so the file is incomplete and can't be continued.");
+        }
+
         if (_closed)
         {
             throw new InvalidOperationException("The file is closed.");

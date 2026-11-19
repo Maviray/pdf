@@ -22,6 +22,21 @@ public sealed class ValidatorSelfTests
         Assert.ThrowsAny<XunitException>(() => Qpdf.Check(path));
     }
 
+    // Poppler repairs a wrong startxref, renders the page and exits with 0, but reports the damage on stderr. Only the
+    // stderr check can fail this file, so the "exited with 0" in the message proves that check is what caught it.
+    [Fact]
+    public void PopplerRejectsADamagedFileItCanStillRender()
+    {
+        ExternalTool.Locate("pdftoppm");
+        var text = Encoding.Latin1.GetString(BlankPage());
+        var keyword = text.LastIndexOf("startxref\n", StringComparison.Ordinal) + "startxref\n".Length;
+        var path = GeneratedFiles.Save(Encoding.Latin1.GetBytes(text[..keyword] + "0\n%%EOF\n"));
+
+        var error = Assert.ThrowsAny<XunitException>(() => Poppler.Render(path));
+
+        Assert.Contains("exited with 0", error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void PopplerRejectsAFileThatIsNotAPdf()
     {
