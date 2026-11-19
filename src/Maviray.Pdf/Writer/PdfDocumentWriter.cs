@@ -38,8 +38,12 @@ internal sealed class PdfDocumentWriter : IDisposable
         return _openPage;
     }
 
-    /// <summary>Writes the open page's dictionary and releases the page.</summary>
-    /// <exception cref="InvalidOperationException"><paramref name="page"/> isn't this document's open page.</exception>
+    /// <summary>
+    /// Writes the open page's content stream, then its dictionary, and releases the page (spec D-06). A page with no
+    /// content gets no <c>/Contents</c>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException"><paramref name="page"/> isn't this document's open page, or its content
+    /// has an open path or an unmatched <c>q</c>. Nothing is written then.</exception>
     public void EndPage(PdfPageWriter page)
     {
         ThrowIfClosed();
@@ -49,6 +53,9 @@ internal sealed class PdfDocumentWriter : IDisposable
             throw new InvalidOperationException("That page isn't the open page of this document.");
         }
 
+        // Finished first, so unfinished content throws before anything reaches the file.
+        var content = page.Content.Finish();
+
         var mediaBox = new PdfArray(new PdfInteger(0), new PdfInteger(0), new PdfReal(page.Width), new PdfReal(page.Height));
         var dictionary = new PdfDictionary()
             .Set(PdfName.Type, PdfName.Page)
@@ -56,7 +63,13 @@ internal sealed class PdfDocumentWriter : IDisposable
             .Set(PdfName.MediaBox, mediaBox)
             .Set(PdfName.Resources, new PdfDictionary());
 
+        if (content.Length > 0)
+        {
+            dictionary.Set(PdfName.Contents, _file.Write(new PdfStream(new PdfDictionary(), content)));
+        }
+
         _kids.Add(_file.Write(dictionary));
+        page.Content.Dispose();
         _openPage = null;
     }
 
@@ -89,7 +102,11 @@ internal sealed class PdfDocumentWriter : IDisposable
     }
 
     /// <summary>Returns pooled buffers. Disposing without <see cref="Close"/> leaves an incomplete file.</summary>
-    public void Dispose() => _file.Dispose();
+    public void Dispose()
+    {
+        _openPage?.Content.Dispose();
+        _file.Dispose();
+    }
 
     private static void ThrowIfNotPositive(double value, string paramName)
     {

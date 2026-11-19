@@ -41,6 +41,8 @@ internal sealed class PdfName : PdfObject, IEquatable<PdfName>
 
     public static PdfName Resources { get; } = new("Resources");
 
+    public static PdfName Contents { get; } = new("Contents");
+
     public static PdfName Root { get; } = new("Root");
 
     public static PdfName Size { get; } = new("Size");

@@ -22,6 +22,50 @@ public sealed class PdfDocumentWriterTests
     }
 
     [Fact]
+    public void WritesTheContentStreamBeforeThePage()
+    {
+        var file = PdfFileStructure.Parse(Write(document =>
+        {
+            var page = document.BeginPage(A4Width, A4Height);
+            page.Content.Rectangle(72, 600, 200, 100).Fill();
+            document.EndPage(page);
+        }));
+
+        Assert.Equal("2 0 obj\n<</Length 20>>\nstream\n72 600 200 100 re\nf\n\nendstream\nendobj\n", file.ObjectText(2));
+        Assert.EndsWith("/Resources <<>> /Contents 2 0 R>>\nendobj\n", file.ObjectText(3), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EndingAPageWithAnOpenPathThrows()
+    {
+        using var document = new PdfDocumentWriter(new MemoryStream());
+        var page = document.BeginPage(A4Width, A4Height);
+        page.Content.Rectangle(0, 0, 10, 10);
+
+        Assert.Throws<InvalidOperationException>(() => document.EndPage(page));
+    }
+
+    // EndPage that throws writes and reserves nothing, so the caller can finish the content and end the page again.
+    [Fact]
+    public void APageCanBeEndedAgainAfterItsContentIsFixed()
+    {
+        var file = PdfFileStructure.Parse(Write(document =>
+        {
+            var page = document.BeginPage(A4Width, A4Height);
+            page.Content.SaveState().Rectangle(0, 0, 10, 10);
+            Assert.Throws<InvalidOperationException>(() => document.EndPage(page)); // open path
+            page.Content.Fill();
+            Assert.Throws<InvalidOperationException>(() => document.EndPage(page)); // open q
+            page.Content.RestoreState();
+            document.EndPage(page);
+        }));
+
+        Assert.StartsWith("1 0 obj\n<</Type /Pages ", file.ObjectText(1), StringComparison.Ordinal);
+        Assert.Equal("2 0 obj\n<</Length 19>>\nstream\nq\n0 0 10 10 re\nf\nQ\n\nendstream\nendobj\n", file.ObjectText(2));
+        Assert.EndsWith("/Contents 2 0 R>>\nendobj\n", file.ObjectText(3), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void KeepsPagesInOrder()
     {
         var file = PdfFileStructure.Parse(Write(document =>
