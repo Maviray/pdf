@@ -64,15 +64,24 @@ internal sealed class ContentStreamBuilder : IDisposable
     public ContentStreamBuilder Transform(double a, double b, double c, double d, double e, double f)
     {
         ThrowIfPathOpenOrInText("Transform (cm)");
+        CheckMatrix(a, b, c, d, e, f);
         Operands(a, b, c, d);
         Operands(e, f);
         return Operator("cm"u8);
     }
 
     /// <summary>Writes <c>w</c>, unless <paramref name="width"/> is already the line width.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">The width is negative, or not a number a PDF can hold. Zero is
+    /// allowed: it draws the thinnest line the device can.</exception>
     public ContentStreamBuilder SetLineWidth(double width)
     {
         ThrowIfPathOpen();
+        Check(width, nameof(width));
+        if (width < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(width), width, "A line width can't be negative.");
+        }
+
         if (_state.LineWidth == width)
         {
             return this;
@@ -115,6 +124,10 @@ internal sealed class ContentStreamBuilder : IDisposable
     public ContentStreamBuilder Rectangle(double x, double y, double width, double height)
     {
         ThrowIfInText("Rectangle (re)");
+        Check(x, nameof(x));
+        Check(y, nameof(y));
+        Check(width, nameof(width));
+        Check(height, nameof(height));
         Operands(x, y, width, height);
         _pathOpen = true;
         return Operator("re"u8);
@@ -243,6 +256,20 @@ internal sealed class ContentStreamBuilder : IDisposable
 
         _pathOpen = false;
         return Operator(paintOperator);
+    }
+
+    // Operands are checked before any of them is written, so a call that throws leaves the stream and the tracked state
+    // as they were. Writing checks them again, but by then a bad value would have left half an operator behind.
+    private static void Check(double value, string paramName) => PdfNumberFormat.ThrowIfOutOfRange(value, paramName);
+
+    private static void CheckMatrix(double a, double b, double c, double d, double e, double f)
+    {
+        Check(a, nameof(a));
+        Check(b, nameof(b));
+        Check(c, nameof(c));
+        Check(d, nameof(d));
+        Check(e, nameof(e));
+        Check(f, nameof(f));
     }
 
     private void Operands(params ReadOnlySpan<double> values)
