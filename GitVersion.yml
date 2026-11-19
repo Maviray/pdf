@@ -2,10 +2,9 @@
 # in docs/versions-and-packages.md. Base: GitVersion's GitFlow defaults, with these changes.
 workflow: GitFlow/v1
 
-# The first release is 0.0.1: the build and publishing set-up, with no PDF features yet. 0.1.0 is the first
-# release with features, made from a release/v0.1.0 branch. Before 1.0 the public API may still change
-# (Semantic Versioning, item 4).
-next-version: 0.0.1
+# The next release is 0.1.0, the first with PDF features, made from a release/v0.1.0 branch. 0.0.1 shipped the
+# build and publishing set-up only. Before 1.0 the public API may still change (Semantic Versioning, item 4).
+next-version: 0.1.0
 
 # .NET library practice: AssemblyVersion changes only with the major version, so a minor or patch update never
 # breaks assembly binding. The file version and the informational version carry the full version.
