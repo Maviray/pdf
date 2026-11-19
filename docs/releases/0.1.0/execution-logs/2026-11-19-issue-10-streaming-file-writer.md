@@ -36,7 +36,12 @@ A fresh reviewer checked `c3aede9..484e785`. It found no critical issues and thr
   - The writer is now faulted by any exception from `Write` or `Close`.
   - It refuses an undefined compression level up front.
   - `AFailedWriteFaultsTheWriter` and `RefusesAnUndefinedCompressionLevel` failed before the fix.
-- **No test covered poppler's stderr check.** Poppler repairs a wrong `startxref`, exits with 0, and reports the damage on stderr. `PopplerRejectsADamagedFileItCanStillRender` asserts that the failure says "exited with 0", so only the stderr check can satisfy it. It runs in CI.
+- **No test covered poppler's stderr check.**
+  - The first fixture, a wrong `startxref`, didn't work. CI showed that poppler 26.01 repairs it without writing anything to stderr, so the test failed: no exception was thrown.
+  - `PopplerRejectsAFileItCanRenderButComplainsAbout` now uses a page whose content stream holds an unknown operator. Poppler renders it and exits with 0, but reports a syntax error on stderr.
+  - The test asserts that the failure says "exited with 0", so only the stderr check can satisfy it.
+  - CI run 44524991022 at `693a5f7`: 142 of 142 tests succeeded, with 0 skipped.
+- **One infrastructure failure.** The first attempt of run 44523899361 failed in `apt-get`, because `security.ubuntu.com` was unreachable from the runner. The re-run reached the tests.
 - **"Ending a page that isn't the open one" wasn't pinned.** `EndingAnotherPageWhileOneIsOpenThrows` fails when the page check is broken the way the reviewer broke it, and passes on the real code.
 
 The minor findings are left for later, among them:
