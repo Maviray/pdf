@@ -453,7 +453,7 @@ Every layer is tested on its own, and every generated file is checked by tools w
 | Untrusted input | Font and image parsers do not crash or hang | Fuzzing with SharpFuzz, then corpus regression |
 | Platforms | Same output everywhere | CI matrix: Windows, Linux, macOS; x64 and ARM64; Native AOT publish; Blazor WebAssembly smoke test |
 
-A manual check on every release covers the viewers that cannot run in CI: Adobe Acrobat and macOS Preview.
+A manual check on every release covers the viewers that cannot run in CI: Adobe Acrobat and macOS Preview. Preview needs a Mac, so a release checked without one says in its report that Preview wasn't checked.
 
 ## Packaging, platforms and licensing
 
@@ -546,7 +546,7 @@ Six phases take Maviray.Pdf from a spike to a full-featured library. Each phase 
 
 | Phase | Scope | Gate |
 | --- | --- | --- |
-| **P0 · Foundations** | PDF object model and streaming writer; content-stream builder; standard-14 Helvetica text and rectangles. Solution layout and CI with qpdf checks and pdftoppm renders. | Hello-world opens cleanly in Acrobat, Chrome, Firefox and Preview; qpdf reports no errors |
+| **P0 · Foundations** | PDF object model and streaming writer; content-stream builder; standard-14 Helvetica text and rectangles. Solution layout and CI with qpdf checks and pdftoppm renders. | Hello-world opens cleanly in Acrobat, Chrome and Firefox; qpdf reports no errors. macOS Preview is checked with release 0.1.0, if a Mac is available |
 | **P1 · MVP layout** | Fluent API; page with header, content and footer; metadata; deterministic mode. Column, Row, Padding, Align, Background, Border, Line, PageBreak. Rich text wrapping across pages; TrueType subsetting with ToUnicode; page numbers. The `Maviray.Pdf.Fonts.Default` package. | The driving invoice, built from Columns and Rows, runs to 10 pages; its German, Turkish and Cyrillic text copies out correctly |
 | **P2 · Business documents** | Table with repeated headers, spans and split rows; JPEG and PNG images. ShowEntire, EnsureSpace, components, font fallback, justified text, vector canvas. PDF/A-2b and 3b with XMP, sRGB OutputIntent and embedded files (ZUGFeRD / Factur-X). Visual regression suite, veraPDF and parser fuzzing in CI; public API documented. | The driving invoice matches its approved renders in every viewer, and its PDF/A-3b version with embedded XML passes veraPDF |
 | **P3 · Typography and navigation** | Kerning and ligatures, hyphenation, CFF (.otf) fonts. Hyperlinks, bookmarks, table of contents; benchmark baseline and targets. | Performance targets met on all four benchmark scenarios |
