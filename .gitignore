@@ -439,3 +439,6 @@ FodyWeavers.xsd
 .DS_Store
 Thumbs.db
 [Dd]esktop.ini
+
+# Release documentation. The template above ignores every releases/ folder as build output.
+!/docs/releases/
