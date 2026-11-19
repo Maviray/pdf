@@ -440,7 +440,7 @@ Maviray.Pdf ships as one core NuGet package with no runtime dependencies. Option
 - `Maviray.Pdf.Fonts.Default`: optional bundled open-licence font (OFL), so a first document works with zero setup.
 - Later: `Maviray.Pdf.Svg`, extra image decoders, and a previewer tool with hot reload.
 
-**Publishing.** CI publishes packages to GitHub Packages, in the Maviray organisation's feed, the same as Maviray's other libraries. A merge into `main` publishes a release; a repository admin can publish a pre-release from any branch. Versions follow Semantic Versioning, calculated from git history. [Versions and packages](../versions-and-packages.md) has the details.
+**Publishing.** CI publishes packages to GitHub Packages, in the Maviray organisation's feed, the same as Maviray's other libraries. nuget.org isn't used for now (see Open questions). A merge into `main` publishes a release; a repository admin can publish a pre-release from any branch. Versions follow Semantic Versioning, calculated from git history. [Versions and packages](../versions-and-packages.md) has the details.
 
 **Naming.** Every project, package and namespace sits under `Maviray.Pdf`. The core project is `Maviray.Pdf`, and every other project is `Maviray.Pdf.<Name>`, including tests and benchmarks (for example `Maviray.Pdf.Tests`). Inside the core, each layer has its own namespace (see Architecture).
 
@@ -501,7 +501,7 @@ These decisions need an answer before the spec is final. The first two shape eve
 - [x] **Licence model.** Decided: revenue-gated, free below an annual revenue threshold and paid above it. See Packaging and licensing.
 - [ ] **Licence legal review.** Version 1.0 in `LICENSE` was written without a lawyer, and it names the Licensor as "Maviray" because no legal entity exists yet. Proposed: name the legal entity once it is formed, and have the licence reviewed before the first commercial licence is sold.
 - [x] **Source availability.** Decided: a public repository, source-available under the Maviray.Pdf Licence, with outside contributions accepted under licence section 10.
-- [ ] **Public package feed.** GitHub Packages needs a GitHub login even for public packages, so outside users can't simply install from it. Proposed: also publish releases to nuget.org before the first public release.
+- [x] **Public package feed.** Decided for now: GitHub Packages only, in the Maviray feed that Maviray's other libraries use. Outside users need a GitHub token with `read:packages` to install from it, so revisit this before the first commercial release.
 - [x] **Product name.** Decided: Maviray.Pdf. Every project, package and namespace sits under it.
 - [x] **Target frameworks.** Decided: net10.0 only. .NET 8 reached end of support on 10 November 2026, and netstandard2.0 is not needed.
 - [ ] **PDF/A-3 timing.** Do e-invoices (ZUGFeRD or Factur-X) move PDF/A-3b forward from P4 into P2?
