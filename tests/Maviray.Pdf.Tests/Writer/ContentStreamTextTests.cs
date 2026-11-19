@@ -67,7 +67,9 @@ public sealed class ContentStreamTextTests : IDisposable
     [InlineData("ET")]
     public void TextOperatorsOutsideATextObjectThrow(string textOperator)
     {
+        // A font set in an earlier text object stays current after ET, so only the text-object rule can refuse these.
         using var builder = new ContentStreamBuilder(_fonts);
+        builder.BeginText().SetFont(Helvetica, 12).EndText();
 
         Assert.Throws<InvalidOperationException>(() => _ = textOperator switch
         {
@@ -137,6 +139,28 @@ public sealed class ContentStreamTextTests : IDisposable
 
         var written = Encoding.Latin1.GetString(builder.EndText().Finish());
         Assert.Equal("BT\n/F1 12 Tf\nET\n", written);
+    }
+
+    // Operands are checked before anything is written or tracked, so a text call that throws changes nothing.
+    [Theory]
+    [InlineData("Tf", "size")]
+    [InlineData("Tm", "e")]
+    public void AThrowingTextCallWritesNothing(string call, string parameter)
+    {
+        using var builder = new ContentStreamBuilder(_fonts);
+        builder.BeginText();
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => _ = call switch
+        {
+            "Tf" => builder.SetFont(Helvetica, double.NaN),
+            "Tm" => builder.SetTextMatrix(1, 0, 0, 1, double.PositiveInfinity, 0),
+            _ => throw new ArgumentOutOfRangeException(nameof(call)),
+        });
+
+        Assert.Equal(parameter, error.ParamName);
+        Assert.Empty(builder.FontsUsed);
+        Assert.Throws<InvalidOperationException>(() => builder.ShowText("x")); // no font became current
+        Assert.Equal("BT\nET\n", Encoding.Latin1.GetString(builder.EndText().Finish()));
     }
 
     [Fact]
