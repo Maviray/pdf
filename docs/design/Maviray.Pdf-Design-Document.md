@@ -1,6 +1,6 @@
 # Maviray.Pdf — Fully Managed .NET PDF Generation Library
 
-**Design Document · Draft v0.2** · Nov 19, 2026 · Yan Doldonov
+**Design Document · Draft v0.3** · Nov 19, 2026 · Yan Doldonov
 
 ## Summary
 
@@ -15,11 +15,18 @@ Why fully managed:
 
 The trade-off is that we own the hard parts that Skia and HarfBuzz would otherwise provide: font subsetting, text shaping and line breaking. Scope control is therefore the main risk, and the roadmap is built around it.
 
-This is draft v0.2. It records four decisions taken since v0.1: the name Maviray.Pdf, a revenue-gated licence, a public source repository, and net10.0 as the only target framework. It is the input for the functional specification and, later, the implementation plan. Decisions still open are collected under Open questions.
+This is draft v0.3. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a revenue-gated licence, a public source repository, and net10.0 as the only target framework. Draft v0.3 settles the questions that were still open:
+
+- the one document that defines v1;
+- API naming, the default unit and a default font;
+- when PDF/A-3 and PDF/UA arrive;
+- that only the fluent API is public.
+
+It is the input for the functional specification and, later, the implementation plan. Open questions records every answer, and the questions deferred to the phase that needs them.
 
 ## Goals and non-goals
 
-Version 1 targets data-driven business documents in European languages: invoices, reports, contracts, certificates and policy summaries.
+Version 1 targets data-driven business documents in European languages: invoices, reports, contracts, certificates and policy summaries. One of them defines "done": a multi-page German invoice (see Driving document).
 
 **Goals**
 
@@ -39,6 +46,23 @@ Version 1 targets data-driven business documents in European languages: invoices
 - Complex-script shaping (Arabic, Hebrew right-to-left, Indic). The text pipeline leaves room for it, but it is not built in v1.
 - AcroForm fields, form filling and digital signatures.
 - A visual (WYSIWYG) designer.
+- Creating or validating e-invoice XML (ZUGFeRD, Factur-X, XRechnung). The library embeds the XML that the caller supplies.
+
+## Driving document
+
+One real document defines "done" for P1 and P2: a multi-page invoice in German from a company to its business customers. It is kept in the repository with synthetic data, and the P1 and P2 gates are checked against it.
+
+| Part | Content | What it exercises | Phase |
+| --- | --- | --- | --- |
+| Header | Seller name and logo, invoice number and date, repeated on every page | Header slot, Row, Image | P1; logo in P2 |
+| Addresses | Seller and buyer address blocks side by side | Row, Text | P1 |
+| Line items | Position, description, quantity, unit price, VAT rate and amount, over several pages, with the column headings repeated on every page | Automatic paging. In P1 a Column of Rows, with the headings in the page header; from P2 a Table with a repeated header row | P1; Table in P2 |
+| Totals | Net amount, VAT per rate and gross amount, never split across pages | Keep-together | P2 |
+| Footer | "Seite X von Y", bank details, company registration | Footer slot, page number, total pages | P1 |
+| Languages | German throughout; Turkish and Cyrillic names in the buyer data and item descriptions | Subsetting, ToUnicode, text extraction | P1 |
+| E-invoice | Factur-X / ZUGFeRD XML from the caller, embedded in a PDF/A-3b file | PDF/A-3b, embedded files, XMP | P2 |
+
+An invoice was chosen over a policy summary because it needs most of P1 and P2: paging, repeated headings, page totals, a logo, keep-together totals and mixed scripts. It also leads straight to e-invoicing. Companies in Germany with more than EUR 800,000 annual turnover must issue structured e-invoices to business customers from January 2027, all companies from 2028, and ZUGFeRD is one of the accepted formats.
 
 ## Requirements
 
@@ -68,7 +92,7 @@ There are 35 starting requirements, each with an ID that the spec and the tests 
 | FR-18 | Hyphenation for German, English, Russian and Turkish | Should | P3 |
 | FR-19 | Hyperlinks (external and internal), bookmarks, table of contents with page numbers | Should | P3 |
 | FR-20 | OpenType CFF (.otf) fonts | Should | P3 |
-| FR-21 | PDF/A-2b and PDF/A-3b, including embedded files such as ZUGFeRD or Factur-X invoice XML | Should | P4 |
+| FR-21 | PDF/A-2b and PDF/A-3b, including embedded files such as ZUGFeRD or Factur-X invoice XML | Must | P2 |
 | FR-22 | Tagged PDF and PDF/UA conformance | Could | P5 |
 | FR-23 | Encryption and permissions (AES-256) | Could | P5 |
 | FR-24 | SVG subset | Could | P5 |
@@ -113,6 +137,8 @@ flowchart TD
 ```
 
 Arrows run from caller to callee. The canvas is the seam between layout and output: the null canvas serves the layout pass, the recording canvas serves tests, and the PDF canvas produces the file.
+
+**Only the fluent API is public.** The element tree, layout engine, canvas, writer and the three shared services are `internal`. Tests reach them through `InternalsVisibleTo`. A type below the fluent layer becomes public only where the API needs it, such as the drawing surface of the Canvas element in P2. P0 therefore ships no public API, and the first public API arrives with P1.
 
 ## Public API design
 
@@ -168,13 +194,13 @@ Document.Create(doc =>
 - **One child per container, many per layout element.** Column, Row, Table and Layers take a descriptor callback; everything else wraps one child.
 - **Text has its own descriptor.** `Text(...)` returns a span descriptor for style chaining. `Text(t => ...)` builds rich text from spans, page numbers and links.
 - **Components.** `IComponent.Compose(IContainer)` packages reusable blocks such as an address box or a totals table. Dynamic components are called again on every page.
-- **Units.** Points (1/72 inch) internally; helpers accept millimetres, centimetres and inches.
-- **Colours.** A `Color` struct for RGB with hex parsing; CMYK is added with PDF/A and print profiles.
+- **Units.** Points (1/72 inch) are the default in the public API and the only unit inside the library. Every size parameter also has an overload that takes a `Unit`: millimetres, centimetres or inches.
+- **Colours.** A `Color` struct for RGB with hex parsing; CMYK is added in P4.
 - **Settings.** Document-level options: PDF version, conformance level, compression level, deterministic mode, layout diagnostics.
 - **Output.** `GeneratePdf(Stream)`, `GeneratePdf(string path)` and `byte[] GeneratePdf()`. Generation is synchronous and CPU-bound. An async overload only wraps stream writes.
 - **Errors.** Content that can never fit throws `LayoutException` with the element path, for example `Page 3 > Content > Column[2] > Table > Row 14`.
 
-The API shape deliberately resembles QuestPDF so users can migrate easily. The implementation must be clean-room (see Packaging and licensing).
+The API shape deliberately resembles QuestPDF so users can migrate easily. Generic layout terms such as Column, Row, Padding, Text and Table stay. Names that are distinctive to QuestPDF get names of our own, for example ShowEntire, EnsureSpace, ShowOnce, SkipOnce, RelativeItem and ConstantItem. The names in this document are working names, and the functional specification fixes the public ones. The implementation must be clean-room (see Packaging and licensing).
 
 ## Layout engine
 
@@ -351,7 +377,7 @@ Images are passed through in their original encoding wherever PDF allows it. Dec
 | PNG, no transparency (grey, RGB, palette) | IDAT data embedded as-is with FlateDecode and the PNG predictor (`/Predictor 15`); palettes become an `/Indexed` colour space | P2 |
 | PNG with an alpha channel or `tRNS` | Decoded, then split into a colour image and an `/SMask` alpha image, both Flate-compressed | P2 |
 | PNG, 16-bit or interlaced | 16-bit kept at 16 bits per component; Adam7 interlacing decoded fully | P2 |
-| Embedded ICC profile | Written as an ICCBased colour space; needed for PDF/A | P4 |
+| Embedded ICC profile | Written as an ICCBased colour space. Until P4, PDF/A mode refuses a CMYK image, because it doesn't match the sRGB OutputIntent | P4 |
 | BMP, GIF, WebP, TIFF | Optional decoder packages, not in the core | Later |
 
 **Image options.** Fit modes are FitWidth, FitHeight, FitArea and Stretch. An optional target DPI for downsampling large photos needs a managed JPEG encoder, so it is deferred.
@@ -366,13 +392,13 @@ Navigation features build on the layout pass, which already knows where every na
 
 | Feature | How the PDF carries it | Phase |
 | --- | --- | --- |
-| Metadata | Info dictionary in P1; XMP metadata stream and `/Lang` in P4 | P1, P4 |
+| Metadata | Info dictionary and `/Lang` in P1; XMP metadata stream in P2 | P1, P2 |
 | External hyperlinks | Link annotations with a URI action over the element's area | P3 |
 | Internal links | Named destinations created from Section elements | P3 |
 | Bookmarks | `/Outlines` tree built from sections and headings | P3 |
 | Table of contents | Page numbers taken from the layout pass | P3 |
-| PDF/A-2b | All fonts embedded (already true), XMP, sRGB OutputIntent with ICC profile, no encryption, document ID | P4 |
-| PDF/A-3b and attachments | Embedded files with `/AFRelationship`, e.g. ZUGFeRD or Factur-X e-invoice XML | P4 |
+| PDF/A-2b | All fonts embedded (already true), XMP, sRGB OutputIntent with ICC profile, no encryption, document ID | P2 |
+| PDF/A-3b and attachments | Embedded files with `/AFRelationship`, e.g. ZUGFeRD or Factur-X e-invoice XML, and the Factur-X XMP extension schema | P2 |
 | Tagged PDF and PDF/UA | Structure tree with marked content (`BDC`/`EMC`), role mapping, alt text, reading order; elements map to Heading, Paragraph, Table and Figure | P5 |
 | Encryption | AES-256 (revision 6) with user and owner passwords and permissions | P5 |
 | Digital signatures | Not planned for v1; reserving signature byte ranges is a later option | Later |
@@ -423,7 +449,7 @@ Every layer is tested on its own, and every generated file is checked by tools w
 | Whole documents | No unintended change in output | Deterministic mode plus snapshot tests (Verify) on the PDF bytes |
 | Rendering | Same look across viewers | Pages rasterized with pdftoppm and PDFium, compared to approved PNGs |
 | Text extraction | ToUnicode correctness for German, Turkish, Cyrillic, Greek | `pdftotext` output compared to the source strings |
-| Conformance | PDF/A and PDF/UA rules | veraPDF in CI from P4 |
+| Conformance | PDF/A and PDF/UA rules | veraPDF in CI from P2 |
 | Untrusted input | Font and image parsers do not crash or hang | Fuzzing with SharpFuzz, then corpus regression |
 | Platforms | Same output everywhere | CI matrix: Windows, Linux, macOS; x64 and ARM64; Native AOT publish; Blazor WebAssembly smoke test |
 
@@ -437,7 +463,7 @@ Maviray.Pdf ships as one core NuGet package with no runtime dependencies. Option
 
 - `Maviray.Pdf`: API, layout, text, fonts, images, PDF writer.
 - `Maviray.Pdf.Fonts.System`: optional discovery of installed system fonts, for desktop and server only.
-- `Maviray.Pdf.Fonts.Default`: optional bundled open-licence font (OFL), so a first document works with zero setup.
+- `Maviray.Pdf.Fonts.Default`: optional Noto Sans in regular, bold, italic and bold italic, under the SIL Open Font License, with the licence file in the package. A first document then works with zero setup. It arrives with P1.
 - Later: `Maviray.Pdf.Svg`, extra image decoders, and a previewer tool with hot reload.
 
 **Publishing.** CI publishes packages to GitHub Packages, in the Maviray organisation's feed, the same as Maviray's other libraries. nuget.org isn't used for now (see Open questions). A merge into `main` publishes a release; a repository admin can publish a pre-release from any branch. Versions follow Semantic Versioning, calculated from git history. [Versions and packages](../versions-and-packages.md) has the details.
@@ -484,7 +510,7 @@ Scope is the biggest risk. Each phase therefore ends in a working, usable librar
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Feature creep towards full QuestPDF parity | High | v1 is defined by one real document (see Open questions); phase gates; non-goals list |
+| Feature creep towards full QuestPDF parity | High | v1 is defined by one real document (see Driving document); phase gates; non-goals list; e-invoice XML stays the caller's |
 | Solo side project stalls before it is useful | High | P1 is small and usable on its own; dogfood it on a real internal document early |
 | Layout engine loops forever or splits content unpredictably | High | Strict SpacePlan contract, no-progress detection, element-path errors, recording-canvas tests |
 | Text shaping scope grows (complex scripts, variable fonts) | High | v1 limited to Latin, Cyrillic and Greek; `IShaper` seam for later; clear NotSupported errors |
@@ -495,23 +521,24 @@ Scope is the biggest risk. Each phase therefore ends in a working, usable librar
 
 ## Open questions
 
-These decisions need an answer before the spec is final. The first two shape everything else. Each open item carries a proposed default; tick it once it is decided.
+Every question that blocks P0, P1 or P2 is decided. The three still open are deferred to the phase that needs them, and each is answered before that phase starts.
 
-- [ ] **Driving use case for v1.** Which real document defines "done" for P1 and P2? Proposed: a multi-page invoice or policy summary with a table, logo, totals and page numbers.
+- [x] **Driving use case for v1.** Decided: a multi-page German invoice to business customers. See Driving document.
 - [x] **Licence model.** Decided: revenue-gated, free below an annual revenue threshold and paid above it. See Packaging and licensing.
-- [ ] **Licence legal review.** Version 1.0 in `LICENSE` was written without a lawyer, and it names the Licensor as "Maviray" because no legal entity exists yet. Proposed: name the legal entity once it is formed, and have the licence reviewed before the first commercial licence is sold.
+- [x] **Licence legal review.** Decided: name the legal entity in the licence once it is formed, and have the licence reviewed before the first commercial licence is sold. Until then, version 1.0 in `LICENSE` stays as written, with "Maviray" as the Licensor.
 - [x] **Source availability.** Decided: a public repository, source-available under the Maviray.Pdf Licence, with outside contributions accepted under licence section 10.
 - [x] **Public package feed.** Decided for now: GitHub Packages only, in the Maviray feed that Maviray's other libraries use. Outside users need a GitHub token with `read:packages` to install from it, so revisit this before the first commercial release.
 - [x] **Product name.** Decided: Maviray.Pdf. Every project, package and namespace sits under it.
 - [x] **Target frameworks.** Decided: net10.0 only. .NET 8 reached end of support on 10 November 2026, and netstandard2.0 is not needed.
-- [ ] **PDF/A-3 timing.** Do e-invoices (ZUGFeRD or Factur-X) move PDF/A-3b forward from P4 into P2?
-- [ ] **Accessibility timing.** Is PDF/UA a sales requirement early, for example for insurers or the public sector?
-- [ ] **Complex scripts.** Never, a managed shaper later, or an optional HarfBuzz plug-in that gives up "fully managed" for those who opt in?
-- [ ] **Default font.** Bundle one open font package, and if so which one: Noto Sans, Inter or Source Sans 3?
-- [ ] **API naming.** Mirror QuestPDF names closely for easy migration, or use distinct names for a clearer IP position?
-- [ ] **Default unit.** Points or millimetres in the public API?
-- [ ] **Hyphenation languages.** Which pattern sets ship in the core: German, English, Russian, Turkish?
-- [ ] **Previewer.** Is a live preview tool (hot reload of a document while coding) in scope, and in which phase?
+- [x] **Public surface of P0.** Decided: only the fluent API is public, so the P0 layers are internal and P0 ships no public API. Release 0.1.0 carries P0 and P1 together. See Architecture.
+- [x] **PDF/A-3 timing.** Decided: PDF/A-2b and PDF/A-3b move from P4 into P2, because the driving document is a German invoice. The library embeds the XML the caller supplies.
+- [x] **Accessibility timing.** Decided: PDF/UA stays in P5 unless a customer needs it earlier. Elements keep their semantic roles from P1, so moving it earlier needs no API break.
+- [ ] **Complex scripts.** Deferred until after v1. The `IShaper` interface keeps all three options open: never, a managed shaper, or an optional HarfBuzz plug-in that gives up "fully managed" for those who opt in.
+- [x] **Default font.** Decided: Noto Sans in `Maviray.Pdf.Fonts.Default`, from P1. It covers Latin, Cyrillic and Greek under the SIL Open Font License.
+- [x] **API naming.** Decided: keep QuestPDF's shape and its generic layout terms, and give names that are distinctive to QuestPDF names of our own. The functional specification fixes the names. See Public API design.
+- [x] **Default unit.** Decided: points, with an overload that takes a `Unit` for every size.
+- [ ] **Hyphenation languages.** Deferred to P3, when the licences of the pattern sets are checked. FR-18 lists the proposed set: German, English, Russian and Turkish.
+- [ ] **Previewer.** Deferred to P5, where the roadmap puts it. It would be a separate tool, not part of the core package.
 
 ## Roadmap
 
@@ -520,18 +547,18 @@ Six phases take Maviray.Pdf from a spike to a full-featured library. Each phase 
 | Phase | Scope | Gate |
 | --- | --- | --- |
 | **P0 · Foundations** | PDF object model and streaming writer; content-stream builder; standard-14 Helvetica text and rectangles. Solution layout and CI with qpdf checks and pdftoppm renders. | Hello-world opens cleanly in Acrobat, Chrome, Firefox and Preview; qpdf reports no errors |
-| **P1 · MVP layout** | Fluent API; page with header, content and footer; metadata; deterministic mode. Column, Row, Padding, Align, Background, Border, Line, PageBreak. Rich text wrapping across pages; TrueType subsetting with ToUnicode; page numbers. | A real 10-page document is generated; German, Turkish and Cyrillic text copies out correctly |
-| **P2 · Business documents** | Table with repeated headers, spans and split rows; JPEG and PNG images. ShowEntire, EnsureSpace, components, font fallback, justified text, vector canvas. Visual regression suite and parser fuzzing in CI; public API documented. | Invoice and report samples match approved renders in every viewer |
+| **P1 · MVP layout** | Fluent API; page with header, content and footer; metadata; deterministic mode. Column, Row, Padding, Align, Background, Border, Line, PageBreak. Rich text wrapping across pages; TrueType subsetting with ToUnicode; page numbers. The `Maviray.Pdf.Fonts.Default` package. | The driving invoice, built from Columns and Rows, runs to 10 pages; its German, Turkish and Cyrillic text copies out correctly |
+| **P2 · Business documents** | Table with repeated headers, spans and split rows; JPEG and PNG images. ShowEntire, EnsureSpace, components, font fallback, justified text, vector canvas. PDF/A-2b and 3b with XMP, sRGB OutputIntent and embedded files (ZUGFeRD / Factur-X). Visual regression suite, veraPDF and parser fuzzing in CI; public API documented. | The driving invoice matches its approved renders in every viewer, and its PDF/A-3b version with embedded XML passes veraPDF |
 | **P3 · Typography and navigation** | Kerning and ligatures, hyphenation, CFF (.otf) fonts. Hyperlinks, bookmarks, table of contents; benchmark baseline and targets. | Performance targets met on all four benchmark scenarios |
-| **P4 · Compliance** | PDF/A-2b and 3b with XMP, sRGB OutputIntent and embedded files (ZUGFeRD / Factur-X). Cross-reference streams and object streams. | veraPDF passes for every PDF/A sample |
+| **P4 · Output and colour** | Cross-reference streams and object streams. ICC profiles embedded from images; CMYK colour. | Every sample passes qpdf and veraPDF with cross-reference and object streams on |
 | **P5 · Advanced** | Tagged PDF and PDF/UA, AES-256 encryption, SVG subset. Right-to-left and complex scripts; previewer tool. | PDF/UA machine checks pass in veraPDF |
 
-P1 is the first release worth dogfooding. The phases have no dates yet. Size them after P0, when the real pace of the writer and font work is known.
+P1 is the first release worth dogfooding. Release 0.1.0 carries P0 and P1 together, because P0 has no public API. The phases have no dates yet. Size them after P0, when the real pace of the writer and font work is known.
 
 ## References
 
 - [ISO 32000-2:2020 (PDF 2.0) and ISO 14289 (PDF/UA)](https://pdfa.org/sponsored-standards): the core PDF and accessibility standards, free from the PDF Association.
 - [OpenType specification 1.9.1, font file structure](https://learn.microsoft.com/en-us/typography/opentype/spec/otff): table directory, checksums and the tables the parser and subsetter handle.
 - [UAX #14: Unicode Line Breaking Algorithm](https://www.unicode.org/reports/tr14/): break opportunities for the line breaker.
-- [veraPDF](https://verapdf.org/home/): open-source validator for every PDF/A level and PDF/UA machine checks, used in CI from P4.
+- [veraPDF](https://verapdf.org/home/): open-source validator for every PDF/A level and PDF/UA machine checks, used in CI from P2.
 - [QuestPDF Community License 3.0](https://www.questpdf.com/license/community.html): the licence terms behind the clean-room rule.
