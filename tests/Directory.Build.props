@@ -1,0 +1,14 @@
+<Project>
+  <!-- Settings shared by the test projects in tests/. The library projects in src/ keep their own. -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- xunit.v3 test projects are executables on Microsoft.Testing.Platform; global.json makes dotnet test use that runner. -->
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

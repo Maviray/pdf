@@ -1,0 +1,40 @@
+# Package versions come from git history. GitVersion 6 calculates one for every commit; the rules are explained
+# in docs/versions-and-packages.md. Base: GitVersion's GitFlow defaults, with these changes.
+workflow: GitFlow/v1
+
+# The first release is 0.0.1: the build and publishing set-up, with no PDF features yet. 0.1.0 is the first
+# release with features, made from a release/v0.1.0 branch. Before 1.0 the public API may still change
+# (Semantic Versioning, item 4).
+next-version: 0.0.1
+
+# .NET library practice: AssemblyVersion changes only with the major version, so a minor or patch update never
+# breaks assembly binding. The file version and the informational version carry the full version.
+assembly-versioning-scheme: Major
+assembly-file-versioning-scheme: MajorMinorPatchTag
+
+# Modes:
+# - main is ContinuousDeployment: every commit there is a release with a plain version (0.1.0), no pre-release part.
+# - Every other branch is ContinuousDelivery: the pre-release number grows with each commit, so every build has
+#   its own version (0.2.0-beta.7, then 0.2.0-beta.8).
+#
+# Pre-release labels sort alpha < beta < rc < stable, so a branch build is never offered as the newest pre-release
+# ahead of develop, and nothing is offered ahead of a release candidate.
+branches:
+  main:
+    mode: ContinuousDeployment
+    label: ''
+  release:
+    mode: ContinuousDelivery
+    label: rc
+  hotfix:
+    mode: ContinuousDelivery
+    label: rc
+  develop:
+    mode: ContinuousDelivery
+    label: beta
+  feature:
+    mode: ContinuousDelivery
+    label: alpha.{BranchName}
+  unknown:
+    mode: ContinuousDelivery
+    label: alpha.{BranchName}
