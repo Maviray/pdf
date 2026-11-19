@@ -25,3 +25,23 @@ The branch `feature/12-helvetica-text` is stacked on `feature/11-content-stream-
   - From Git Bash, the two `pdftotext` tests run with Git for Windows' xpdf, and both pass.
   - With the page's `/Font` resource removed, both fail with empty output.
   - The qpdf test skips locally. The PR's CI runs all three with poppler.
+- **First CI run** (PR #17, run 44527036223, at `2840375`): 238 of 238 tests succeeded, with 0 skipped. CI's poppler `pdftotext` agrees with xpdf's.
+- **The P0.3 review fixes** were merged in from `feature/11` (`0ede95b`). `ContentStreamBuilder` conflicted, and the resolution kept this item's builder and applied the same operand checks. CI: 246 of 246, with 0 skipped.
+
+## Final review
+
+A fresh reviewer found no critical issues and two important ones, fixed in one pass:
+
+- **A failed text call changed the stream.** A `SetFont` with a bad size, or a `SetTextMatrix` with a bad operand, wrote, reserved and tracked before checking its numbers. Both now check first.
+  - `AThrowingTextCallWritesNothing` failed before the fix.
+  - The test also asserts that no font became current, and that nothing was reserved or written.
+- **"`Tj` outside a text object" passed for the wrong reason.** No font had been set, so `ShowText` refused because of the missing font instead.
+  - The theory now sets a font in an earlier text object, which is the realistic mistake, because the font survives `ET`.
+  - It fails against the reviewer's mutant.
+
+Minor findings left for later:
+- two untested sequencing cases;
+- a lone surrogate in the refusal theory;
+- an emoji's error naming only its high surrogate;
+- literal invisible characters in the source. The file tool turned the `\uXXXX` escapes into the characters themselves. Behaviour is unchanged.
+- the soft hyphen and no-break space, which follow Annex D. To be recorded for P1's hyphenation.

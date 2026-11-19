@@ -160,10 +160,13 @@ internal sealed class ContentStreamBuilder : IDisposable
 
     /// <summary>Writes <c>Tf</c>, unless <paramref name="font"/> at <paramref name="size"/> is already current.</summary>
     /// <exception cref="InvalidOperationException">This builder has no font resources, or no text object is open.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="size"/> isn't a number a PDF can hold. Nothing is
+    /// written, reserved or tracked then.</exception>
     public ContentStreamBuilder SetFont(StandardFont font, double size)
     {
         ArgumentNullException.ThrowIfNull(font);
         ThrowIfNotInText("SetFont (Tf)");
+        Check(size, nameof(size));
         if (_fonts is null)
         {
             throw new InvalidOperationException("This content stream has no font resources, so it can't set a font.");
@@ -191,6 +194,7 @@ internal sealed class ContentStreamBuilder : IDisposable
     public ContentStreamBuilder SetTextMatrix(double a, double b, double c, double d, double e, double f)
     {
         ThrowIfNotInText("SetTextMatrix (Tm)");
+        CheckMatrix(a, b, c, d, e, f);
         Operands(a, b, c, d);
         Operands(e, f);
         return Operator("Tm"u8);
