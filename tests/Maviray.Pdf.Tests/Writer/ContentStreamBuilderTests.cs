@@ -136,6 +136,50 @@ public sealed class ContentStreamBuilderTests
         Assert.Throws<InvalidOperationException>(() => builder.Finish());
     }
 
+    // Every operand is checked before anything is written, so a call that throws leaves the stream as it was.
+    [Theory]
+    [InlineData("re", "height")]
+    [InlineData("cm", "e")]
+    [InlineData("w", "width")]
+    public void AThrowingCallWritesNothing(string call, string parameter)
+    {
+        using var builder = new ContentStreamBuilder();
+        builder.SetLineWidth(1);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => _ = call switch
+        {
+            "re" => builder.Rectangle(1, 2, 3, double.NaN),
+            "cm" => builder.Transform(1, 0, 0, 1, double.PositiveInfinity, 0),
+            "w" => builder.SetLineWidth(double.NaN),
+            _ => throw new ArgumentOutOfRangeException(nameof(call)),
+        });
+
+        Assert.Equal(parameter, error.ParamName);
+        Assert.Equal("1 w\n", Encoding.Latin1.GetString(builder.Finish()));
+    }
+
+    [Fact]
+    public void AnInvalidLineWidthIsRefusedEveryTime()
+    {
+        using var builder = new ContentStreamBuilder();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => builder.SetLineWidth(double.PositiveInfinity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => builder.SetLineWidth(double.PositiveInfinity));
+    }
+
+    [Theory]
+    [InlineData(-2.0)]
+    [InlineData(-0.0001)]
+    public void RefusesANegativeLineWidth(double width)
+    {
+        using var builder = new ContentStreamBuilder();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => builder.SetLineWidth(width));
+    }
+
+    [Fact]
+    public void AcceptsAZeroLineWidth() => Assert.Equal("0 w\n", Written(builder => builder.SetLineWidth(0)));
+
     [Fact]
     public void IsEmptyUntilSomethingIsWritten()
     {
