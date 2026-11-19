@@ -8,7 +8,7 @@ name: Publish NuGet package
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/nuget-publishing] # TEMPORARY: the feature branch is listed only to test this workflow
   workflow_dispatch:
 
 # Nothing by default; the job asks for what it needs.
