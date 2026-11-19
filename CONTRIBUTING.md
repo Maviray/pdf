@@ -25,6 +25,7 @@ Use synthetic content only, never real customer documents.
 ## Pull requests
 
 - **Branch from `develop` and target `develop`.**
+- **Every pull request is built and tested.** The *Build* check runs automatically. If this is your first contribution, the run waits until the maintainer approves it.
 - **The maintainer approves every merge.** Merging into `develop` or `main` needs the maintainer's approval.
 - **Sign your commits.** `develop` and `main` accept only signed commits, which GitHub marks as *Verified*.
 - **Write the failing test first,** then the code that makes it pass. A change in behaviour needs a test that pins it.
