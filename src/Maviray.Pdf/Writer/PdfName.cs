@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Maviray.Pdf.Writer;
 
 /// <summary>
@@ -16,7 +14,7 @@ internal sealed class PdfName : PdfObject, IEquatable<PdfName>
     {
         ArgumentException.ThrowIfNullOrEmpty(value);
         Value = value;
-        _bytes = Encoding.UTF8.GetBytes(value);
+        _bytes = System.Text.Encoding.UTF8.GetBytes(value); // qualified: the shared name Encoding below would hide it
     }
 
     public static PdfName Length { get; } = new("Length");
@@ -42,6 +40,18 @@ internal sealed class PdfName : PdfObject, IEquatable<PdfName>
     public static PdfName Resources { get; } = new("Resources");
 
     public static PdfName Contents { get; } = new("Contents");
+
+    public static PdfName Font { get; } = new("Font");
+
+    public static PdfName Subtype { get; } = new("Subtype");
+
+    public static PdfName Type1 { get; } = new("Type1");
+
+    public static PdfName BaseFont { get; } = new("BaseFont");
+
+    public static PdfName Encoding { get; } = new("Encoding");
+
+    public static PdfName WinAnsiEncoding { get; } = new("WinAnsiEncoding");
 
     public static PdfName Root { get; } = new("Root");
 
