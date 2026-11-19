@@ -8,6 +8,7 @@ namespace Maviray.Pdf.Writer;
 internal sealed class PdfDocumentWriter : IDisposable
 {
     private readonly PdfFileWriter _file;
+    private readonly FontResources _fonts;
     private readonly PdfReference _pageTree;
     private readonly PdfArray _kids = [];
     private PdfPageWriter? _openPage;
@@ -16,6 +17,7 @@ internal sealed class PdfDocumentWriter : IDisposable
     public PdfDocumentWriter(Stream output, PdfWriterOptions? options = null)
     {
         _file = new PdfFileWriter(output, options ?? new PdfWriterOptions());
+        _fonts = new FontResources(_file);
 
         // Reserved first, so every page dictionary can name its /Parent as soon as it is written.
         _pageTree = _file.Reserve();
@@ -34,7 +36,7 @@ internal sealed class PdfDocumentWriter : IDisposable
             throw new InvalidOperationException("A page is already open. End it before beginning the next one.");
         }
 
-        _openPage = new PdfPageWriter(width, height);
+        _openPage = new PdfPageWriter(width, height, _fonts);
         return _openPage;
     }
 
@@ -56,12 +58,25 @@ internal sealed class PdfDocumentWriter : IDisposable
         // Finished first, so unfinished content throws before anything reaches the file.
         var content = page.Content.Finish();
 
+        // Only the fonts this page used, each pointing at the document's one object for that font.
+        var resources = new PdfDictionary();
+        if (page.Content.FontsUsed.Count > 0)
+        {
+            var fonts = new PdfDictionary();
+            foreach (var font in page.Content.FontsUsed)
+            {
+                fonts.Set(_fonts.NameOf(font), _fonts.ReferenceOf(font));
+            }
+
+            resources.Set(PdfName.Font, fonts);
+        }
+
         var mediaBox = new PdfArray(new PdfInteger(0), new PdfInteger(0), new PdfReal(page.Width), new PdfReal(page.Height));
         var dictionary = new PdfDictionary()
             .Set(PdfName.Type, PdfName.Page)
             .Set(PdfName.Parent, _pageTree)
             .Set(PdfName.MediaBox, mediaBox)
-            .Set(PdfName.Resources, new PdfDictionary());
+            .Set(PdfName.Resources, resources);
 
         if (content.Length > 0)
         {
@@ -87,6 +102,9 @@ internal sealed class PdfDocumentWriter : IDisposable
         {
             throw new InvalidOperationException("A document needs at least one page.");
         }
+
+        // Shared resources come first, once each (spec D-05).
+        _fonts.WriteAll();
 
         _file.Write(_pageTree, new PdfDictionary()
             .Set(PdfName.Type, PdfName.Pages)

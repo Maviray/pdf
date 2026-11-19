@@ -36,6 +36,44 @@ public sealed class PdfDocumentWriterTests
     }
 
     [Fact]
+    public void TwoPagesShareOneFontObject()
+    {
+        var file = PdfFileStructure.Parse(Write(document =>
+        {
+            for (var i = 0; i < 2; i++)
+            {
+                var page = document.BeginPage(A4Width, A4Height);
+                page.Content.BeginText().SetFont(StandardFont.Helvetica, 12).ShowText("Page").EndText();
+                document.EndPage(page);
+            }
+        }));
+
+        // Object 2 is the font, reserved when the first page set it; then each page's content stream and dictionary.
+        Assert.Contains("/Resources <</Font <</F1 2 0 R>>>> /Contents 3 0 R>>", file.ObjectText(4), StringComparison.Ordinal);
+        Assert.Contains("/Resources <</Font <</F1 2 0 R>>>> /Contents 5 0 R>>", file.ObjectText(6), StringComparison.Ordinal);
+        Assert.Equal(
+            "2 0 obj\n<</Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding>>\nendobj\n",
+            file.ObjectText(2));
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(file.Text, "/BaseFont"));
+    }
+
+    [Fact]
+    public void APageWithoutTextHasNoFontResources()
+    {
+        var file = PdfFileStructure.Parse(Write(document =>
+        {
+            var page = document.BeginPage(A4Width, A4Height);
+            page.Content.BeginText().SetFont(StandardFont.Helvetica, 12).ShowText("Text").EndText();
+            document.EndPage(page);
+            var blank = document.BeginPage(A4Width, A4Height);
+            blank.Content.Rectangle(0, 0, 10, 10).Fill();
+            document.EndPage(blank);
+        }));
+
+        Assert.Contains("/Resources <<>> /Contents 5 0 R>>", file.ObjectText(6), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void EndingAPageWithAnOpenPathThrows()
     {
         using var document = new PdfDocumentWriter(new MemoryStream());
