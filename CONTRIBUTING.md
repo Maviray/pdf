@@ -20,7 +20,7 @@ Use synthetic content only, never real customer documents.
 ## Branches and releases
 
 - `develop` is the integration branch. `main` holds released versions only.
-- Releases follow semantic versioning and are tagged `vX.Y.Z`.
+- Releases follow semantic versioning and are tagged `vX.Y.Z`. [Versions and packages](docs/versions-and-packages.md) explains how versions are calculated and how packages are published.
 
 ## Pull requests
 
