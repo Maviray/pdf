@@ -81,7 +81,17 @@ jobs:
           dotnet build --no-restore -c "$CONFIGURATION"
           -p:Version="$VERSION" -p:AssemblyVersion="$ASSEMBLY_VERSION" -p:FileVersion="$FILE_VERSION"
 
+      # A release runs the same PDF checks as a pull request, and can't skip them (spec D-12).
+      - name: Install the PDF validators
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qpdf poppler-utils
+          qpdf --version
+          pdftoppm -v
+
       - name: Test
+        env:
+          MAVIRAY_PDF_REQUIRE_VALIDATORS: true
         run: dotnet test --no-build -c "$CONFIGURATION"
 
       - name: Pack

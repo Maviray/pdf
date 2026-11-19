@@ -1,6 +1,6 @@
 # P0 Foundations: design
 
-**Status:** draft for approval, 2026-11-19. Release 0.1.0. Implements phase P0 of the [design document](../../../design/Maviray.Pdf-Design-Document.md) (draft v0.3).
+**Status:** approved, 2026-11-19. Release 0.1.0. Implements phase P0 of the [design document](../../../design/Maviray.Pdf-Design-Document.md) (draft v0.3).
 
 ## Intent
 

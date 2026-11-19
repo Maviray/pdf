@@ -16,6 +16,23 @@ public sealed class PdfStreamTests
     }
 
     [Fact]
+    public void WriteEncodedAddsTheFilterAfterTheLength()
+    {
+        var dictionary = new PdfDictionary().Set(new PdfName("Type"), new PdfName("XObject"));
+        var stream = new PdfStream(dictionary, "raw data"u8.ToArray());
+        var file = new MemoryStream();
+        using (var output = new PdfOutput(file))
+        {
+            stream.WriteEncoded(output, "abc"u8, PdfName.FlateDecode);
+            output.Flush();
+        }
+
+        Assert.Equal(
+            "<</Type /XObject /Length 3 /Filter /FlateDecode>>\nstream\nabc\nendstream",
+            Encoding.Latin1.GetString(file.ToArray()));
+    }
+
+    [Fact]
     public void WritesAnEmptyStream()
     {
         var text = Serialized.Of(new PdfStream(new PdfDictionary(), ReadOnlyMemory<byte>.Empty));

@@ -23,6 +23,32 @@ internal sealed class PdfName : PdfObject, IEquatable<PdfName>
 
     public static PdfName Filter { get; } = new("Filter");
 
+    public static PdfName Type { get; } = new("Type");
+
+    public static PdfName Page { get; } = new("Page");
+
+    public static PdfName Pages { get; } = new("Pages");
+
+    public static PdfName Catalog { get; } = new("Catalog");
+
+    public static PdfName Kids { get; } = new("Kids");
+
+    public static PdfName Count { get; } = new("Count");
+
+    public static PdfName Parent { get; } = new("Parent");
+
+    public static PdfName MediaBox { get; } = new("MediaBox");
+
+    public static PdfName Resources { get; } = new("Resources");
+
+    public static PdfName Root { get; } = new("Root");
+
+    public static PdfName Size { get; } = new("Size");
+
+    public static PdfName Id { get; } = new("ID");
+
+    public static PdfName FlateDecode { get; } = new("FlateDecode");
+
     public string Value { get; }
 
     private static ReadOnlySpan<byte> EscapedPrintables => "#()<>[]{}/%"u8;

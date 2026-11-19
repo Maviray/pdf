@@ -27,7 +27,15 @@ internal sealed class PdfStream : PdfObject
 
     /// <exception cref="InvalidOperationException">The dictionary gained <c>/Length</c> or <c>/Filter</c> after the stream
     /// was created; writing it would duplicate the key.</exception>
-    public override void WriteTo(PdfOutput output)
+    public override void WriteTo(PdfOutput output) => WriteEncoded(output, Data.Span, filter: null);
+
+    /// <summary>
+    /// Writes the stream with <paramref name="encodedData"/> in place of <see cref="Data"/>, adding <c>/Filter</c> when
+    /// <paramref name="filter"/> is set. The file writer uses it to write compressed data (spec D-08).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The dictionary gained <c>/Length</c> or <c>/Filter</c> after the stream
+    /// was created; writing it would duplicate the key.</exception>
+    public void WriteEncoded(PdfOutput output, ReadOnlySpan<byte> encodedData, PdfName? filter)
     {
         if (SetsLengthOrFilter(Dictionary))
         {
@@ -43,9 +51,17 @@ internal sealed class PdfStream : PdfObject
 
         PdfName.Length.WriteTo(output);
         output.WriteByte((byte)' ');
-        output.WriteInteger(Data.Length);
+        output.WriteInteger(encodedData.Length);
+        if (filter is not null)
+        {
+            output.WriteByte((byte)' ');
+            PdfName.Filter.WriteTo(output);
+            output.WriteByte((byte)' ');
+            filter.WriteTo(output);
+        }
+
         output.Write(">>\nstream\n"u8);
-        output.Write(Data.Span);
+        output.Write(encodedData);
         output.Write("\nendstream"u8);
     }
 
