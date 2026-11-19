@@ -205,7 +205,7 @@ The viewers are checked by hand, because Acrobat and Preview can't run in CI:
 
 - **The checklist** is `docs/qa/checklists/viewer-check.md`, a living doc. It is never ticked in place. For each viewer it checks:
   - the file opens without a warning;
-  - the page matches the render in the artifact;
+  - the page matches the description in the checklist: its elements, their sizes, positions and colours, and the A4 page size. (Amended during P0.5: this replaces "matches the render in the artifact", because the render is a PPM file a typical Windows machine can't open.)
   - the text selects and copies out exactly;
   - Acrobat doesn't offer to save changes when the file closes. That offer is Acrobat's sign that it repaired the file.
 - **Each run** is a dated copy under `docs/qa/reports/`. It records the viewer versions, the operating system, the CI run the artifact came from, and a verdict per viewer.
