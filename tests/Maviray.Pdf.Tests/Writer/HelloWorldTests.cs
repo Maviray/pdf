@@ -5,9 +5,10 @@ using Maviray.Pdf.Writer;
 namespace Maviray.Pdf.Tests.Writer;
 
 /// <summary>
-/// The P0 gate file (spec D-13). CI uploads it as <c>generated/HelloWorldTests/HelloWorldPassesEveryValidator.pdf</c>
-/// in the <c>generated-pdfs</c> artifact, and <c>docs/qa/checklists/viewer-check.md</c> describes how to check it by
-/// hand. Keep this test's name, the layout and the checklist in step.
+/// The P0 gate file (spec D-13). CI uploads it in the <c>generated-pdfs</c> artifact as
+/// <c>Maviray.Pdf.Tests/bin/Release/net10.0/generated/HelloWorldTests/HelloWorldPassesEveryValidator.pdf</c>, and
+/// <c>docs/qa/checklists/viewer-check.md</c> describes how to check it by hand. Keep this test's name, the layout and the
+/// checklist in step.
 /// </summary>
 public sealed class HelloWorldTests
 {

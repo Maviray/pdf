@@ -10,7 +10,7 @@ This checklist is never ticked. For each run, copy the report template at the en
 
 1. Open the latest successful *Build* run of the pull request or branch being checked, on the repository's **Actions** tab.
 2. Download the `generated-pdfs` artifact and unzip it.
-3. Open `generated/HelloWorldTests/HelloWorldPassesEveryValidator.pdf`.
+3. Open `Maviray.Pdf.Tests/bin/Release/net10.0/generated/HelloWorldTests/HelloWorldPassesEveryValidator.pdf`. If the path differs, search the unzipped folder for that file name.
 
 The other files in the artifact belong to other tests. Some are broken on purpose, to prove that the validators catch errors, so don't use them for this check.
 

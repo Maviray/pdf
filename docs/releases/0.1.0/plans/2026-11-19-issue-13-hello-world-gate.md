@@ -18,7 +18,7 @@
 
 ## Review Focus
 
-1. **The file the checklist names is the one the test writes.** Its path in the artifact is `generated/HelloWorldTests/HelloWorldPassesEveryValidator.pdf`, and the checklist must give exactly that path.
+1. **The file the checklist names is the one the test writes.** Its path in the artifact is `Maviray.Pdf.Tests/bin/Release/net10.0/generated/HelloWorldTests/HelloWorldPassesEveryValidator.pdf`. upload-artifact keeps the path below `tests/`. The checklist must give exactly that path.
 2. **The text a viewer copies out is exactly the source text.** That includes `ü`, `ß`, `ö`, `–` and `€`.
 3. **The layout is described well enough to judge by eye.** The checklist says where each element is and what colour it is, because a PPM render can't be opened on a typical Windows machine.
 

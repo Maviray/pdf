@@ -17,3 +17,8 @@ The branch `feature/13-hello-world-gate` is stacked on `feature/12-helvetica-tex
   - It describes the page well enough to judge by eye, because a PPM render can't be opened on a typical Windows machine.
   - It lists four checks per viewer, and has a report template.
 - **The viewer check itself** is the maintainer's, by hand in Acrobat Reader, Chrome and Firefox. #13 stays open until the first report passes those three viewers.
+- **First CI run** (PR #18, run 44528128183, at `3807328`):
+  - 247 of 247 tests succeeded, with 0 skipped.
+  - The downloaded artifact holds the gate file, `%PDF-1.7`, 796 bytes.
+  - The checklist first gave the file's path as `generated/HelloWorldTests/…`, but upload-artifact keeps the path below `tests/`, so the file is at `Maviray.Pdf.Tests/bin/Release/net10.0/generated/HelloWorldTests/…`.
+  - The checklist, the test's comment and the plan now give that path.
