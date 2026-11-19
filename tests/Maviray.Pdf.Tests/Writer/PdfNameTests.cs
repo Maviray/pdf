@@ -48,5 +48,18 @@ public sealed class PdfNameTests
     {
         Assert.Equal("/Length", Serialized.Of(PdfName.Length));
         Assert.Equal("/Filter", Serialized.Of(PdfName.Filter));
+        Assert.Equal("/Type", Serialized.Of(PdfName.Type));
+        Assert.Equal("/Page", Serialized.Of(PdfName.Page));
+        Assert.Equal("/Pages", Serialized.Of(PdfName.Pages));
+        Assert.Equal("/Catalog", Serialized.Of(PdfName.Catalog));
+        Assert.Equal("/Kids", Serialized.Of(PdfName.Kids));
+        Assert.Equal("/Count", Serialized.Of(PdfName.Count));
+        Assert.Equal("/Parent", Serialized.Of(PdfName.Parent));
+        Assert.Equal("/MediaBox", Serialized.Of(PdfName.MediaBox));
+        Assert.Equal("/Resources", Serialized.Of(PdfName.Resources));
+        Assert.Equal("/Root", Serialized.Of(PdfName.Root));
+        Assert.Equal("/Size", Serialized.Of(PdfName.Size));
+        Assert.Equal("/ID", Serialized.Of(PdfName.Id));
+        Assert.Equal("/FlateDecode", Serialized.Of(PdfName.FlateDecode));
     }
 }

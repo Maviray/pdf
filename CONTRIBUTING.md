@@ -33,6 +33,20 @@ Use synthetic content only, never real customer documents.
 - **One type per file.** Each class, record, struct, enum and interface lives in its own file, named after the type. Don't use partial classes.
 - **Add no runtime dependencies.** The core package references no NuGet packages and no native libraries. Packages used only by tests are fine.
 
+## Running the tests
+
+Run `dotnet build` and `dotnet test` from the repository root.
+
+The tests check every PDF they generate with tools we didn't write: `qpdf --check` for the file structure, and poppler's `pdftoppm` and `pdftotext` for rendering and text. Install them to run these checks locally:
+
+- Linux: `sudo apt-get install qpdf poppler-utils`
+- macOS: `brew install qpdf poppler`
+- Windows: install qpdf and poppler, and put their `bin` folders on `PATH`.
+
+A check whose tool isn't installed is skipped, with a message naming the tool. CI installs both tools and sets `MAVIRAY_PDF_REQUIRE_VALIDATORS=true`, which turns a missing tool into a failure. Set it yourself to make sure nothing was skipped.
+
+The generated PDFs and their renders are saved under the test output folder, in `generated/`, and CI uploads them as the `generated-pdfs` artifact of each pull request.
+
 ## Test data and fonts
 
 - Test data is synthetic. Never commit real customer documents.
