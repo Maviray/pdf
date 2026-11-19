@@ -1,0 +1,66 @@
+<Project>
+  <!-- Settings shared by the library projects in src/. Tests keep their own. -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Every public type and member needs XML docs (design document, NFR-09). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--
+      Safe for trimming and Native AOT (design document, NFR-02). This also marks the assembly trimmable
+      and turns on the trim, AOT and single-file analyzers, so unsafe code fails the build.
+    -->
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <!--
+    Code quality: the .NET 10 recommended analyzer rules, and warnings fail the build.
+    The level is pinned so a newer SDK can't add rules that break the build; raise it on purpose with the TFM.
+  -->
+  <PropertyGroup>
+    <AnalysisLevel>10.0-recommended</AnalysisLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!--
+      Stay warnings:
+      - NuGet vulnerability audits (NU1901-NU1904), so a newly published advisory can't break every build;
+      - audit data that couldn't be fetched (NU1900, NU1905), so offline builds and unreachable feeds still build.
+    -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904;NU1905</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!--
+    NuGet package metadata. PackageId, Description and PackageTags stay in each project.
+    CI sets the version from git history (GitVersion.yml); 0.0.0-dev marks a local build that must never ship.
+  -->
+  <PropertyGroup>
+    <Version>0.0.0-dev</Version>
+    <Authors>Maviray</Authors>
+    <Company>Maviray</Company>
+    <Copyright>Copyright (c) 2026 Maviray</Copyright>
+    <RepositoryUrl>https://github.com/Maviray/pdf</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Maviray/pdf</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <!-- The Maviray.Pdf Licence has no SPDX identifier, so the package carries the file and asks users to accept it. -->
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <!--
+    Debugging into the package: Source Link points at the public repository, and the PDB is embedded in the DLL.
+    In CI the build is marked as a CI build, so paths are normalised and the output is deterministic.
+  -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)..\LICENSE" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+</Project>

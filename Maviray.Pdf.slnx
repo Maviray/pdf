@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Maviray.Pdf/Maviray.Pdf.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Maviray.Pdf.Tests/Maviray.Pdf.Tests.csproj" />
+  </Folder>
+</Solution>
