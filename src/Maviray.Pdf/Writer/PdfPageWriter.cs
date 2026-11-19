@@ -1,6 +1,6 @@
 namespace Maviray.Pdf.Writer;
 
-/// <summary>The page that <see cref="PdfDocumentWriter"/> has open. P0.3 adds its content stream.</summary>
+/// <summary>The page that <see cref="PdfDocumentWriter"/> has open, with the builder for its content stream.</summary>
 internal sealed class PdfPageWriter
 {
     internal PdfPageWriter(double width, double height)
@@ -14,4 +14,7 @@ internal sealed class PdfPageWriter
 
     /// <summary>The page height in points.</summary>
     public double Height { get; }
+
+    /// <summary>The page's content stream. <see cref="PdfDocumentWriter.EndPage"/> finishes and writes it.</summary>
+    public ContentStreamBuilder Content { get; } = new();
 }

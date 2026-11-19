@@ -22,6 +22,30 @@ public sealed class PdfDocumentWriterTests
     }
 
     [Fact]
+    public void WritesTheContentStreamBeforeThePage()
+    {
+        var file = PdfFileStructure.Parse(Write(document =>
+        {
+            var page = document.BeginPage(A4Width, A4Height);
+            page.Content.Rectangle(72, 600, 200, 100).Fill();
+            document.EndPage(page);
+        }));
+
+        Assert.Equal("2 0 obj\n<</Length 20>>\nstream\n72 600 200 100 re\nf\n\nendstream\nendobj\n", file.ObjectText(2));
+        Assert.EndsWith("/Resources <<>> /Contents 2 0 R>>\nendobj\n", file.ObjectText(3), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EndingAPageWithAnOpenPathThrows()
+    {
+        using var document = new PdfDocumentWriter(new MemoryStream());
+        var page = document.BeginPage(A4Width, A4Height);
+        page.Content.Rectangle(0, 0, 10, 10);
+
+        Assert.Throws<InvalidOperationException>(() => document.EndPage(page));
+    }
+
+    [Fact]
     public void KeepsPagesInOrder()
     {
         var file = PdfFileStructure.Parse(Write(document =>
