@@ -1,0 +1,23 @@
+# Text files are stored with LF line endings in the repository. Line endings
+# in the working tree follow each developer's core.autocrlf / core.eol setting.
+* text=auto
+
+# Binary files: never convert line endings, diff or merge them.
+# A PDF records the byte offset of every object in its cross-reference table,
+# so converting a single newline breaks the file. Git can mistake a PDF without
+# NUL bytes for text, which is why the type is pinned here.
+*.pdf   binary
+
+# Fonts
+*.ttf   binary
+*.otf   binary
+*.ttc   binary
+
+# Images
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+
+# ICC colour profiles (PDF/A output intents)
+*.icc   binary
+*.icm   binary

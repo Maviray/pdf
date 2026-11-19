@@ -1,0 +1,204 @@
+Maviray.Pdf Licence
+Version 1.0, 19 November 2026
+
+Copyright (c) 2026 Maviray. All rights reserved, except as granted below.
+
+
+1. Definitions
+
+"Licensor" means Maviray, which can be contacted at devops@maviray.com.
+
+"Software" means the Maviray.Pdf source code, compiled libraries and NuGet
+packages, including the add-on packages whose names begin with
+"Maviray.Pdf.", and their documentation, as published by the Licensor,
+including updates.
+
+"You" means the individual or legal entity that uses the Software.
+
+"Affiliate" means any entity that controls, is controlled by, or is under
+common control with You. "Control" means owning more than 50% of the voting
+rights, or having the power to direct management.
+
+"Organisation" means You together with all Your Affiliates.
+
+"Annual Gross Revenue" means the Organisation's total gross revenue
+(turnover) from all sources in its most recently completed financial year,
+as shown in its financial statements. Equity investment and loans are not
+revenue. For a public authority, it means the authority's total annual
+budget.
+
+"Revenue Threshold" means Annual Gross Revenue of EUR 1,000,000, or the
+equivalent in another currency at the exchange rate on the last day of the
+financial year concerned.
+
+"Application" means software, a service or a document workflow that You
+build, which includes the Software as a component and provides substantial
+functionality beyond the Software itself.
+
+"Generated Document" means any file produced by running the Software.
+
+
+2. Community licence (free of charge)
+
+2.1 Eligibility. You may use the Software under this section without charge
+    if at least one of the following applies:
+
+    (a) the Organisation's Annual Gross Revenue is below the Revenue
+        Threshold;
+    (b) You are an individual using the Software for personal,
+        non-commercial purposes;
+    (c) You are a registered charity or non-profit organisation using the
+        Software for Your non-profit activities, whatever Your revenue;
+    (d) You are evaluating the Software, without using it in production,
+        for no more than 30 days.
+
+2.2 Grant. Subject to section 4, the Licensor grants You a worldwide,
+    non-exclusive, non-transferable and non-sublicensable licence, free of
+    charge, to:
+
+    (a) use and copy the Software to develop, test and run Applications;
+    (b) modify the Software for use in Your Applications;
+    (c) distribute the Software in compiled form as part of Your
+        Applications; and
+    (d) let the users of Your Applications use the Software as part of
+        those Applications.
+
+
+3. Commercial licence
+
+3.1 If You do not qualify under section 2.1, You need a commercial licence
+    from the Licensor to use the Software. A commercial licence is a
+    separate written agreement that sets out its fees, scope and term. To
+    obtain one, contact the Licensor at devops@maviray.com.
+
+3.2 If the Organisation's Annual Gross Revenue reaches the Revenue Threshold
+    while You use the Software under section 2, You may continue under
+    section 2 for 90 days after the end of that financial year. To continue
+    after that, You need a commercial licence.
+
+
+4. Conditions
+
+4.1 Keep this licence and the copyright notice with every copy of the
+    Software in source form.
+
+4.2 Each Application that includes the Software must state, in its
+    documentation or third-party notices, that it uses Maviray.Pdf under
+    this licence.
+
+4.3 You may not sell, license or otherwise distribute the Software, or a
+    modified version of it, on its own or as a library, SDK or component
+    whose main value is the Software.
+
+4.4 You may not offer the Software, or a modified version of it, to third
+    parties as a hosted service whose main purpose is to generate PDF
+    documents. Applications that generate PDF documents as one feature
+    among others are allowed.
+
+4.5 The Licensor publishes the source code of the Software in a public
+    repository. You may view it, fork it on the hosting service where it is
+    published, and send changes to the Licensor under section 10. You may
+    also share it, modified or not, with Your own employees and contractors
+    who work on Your Applications. You may not publish or distribute the
+    source code in any other way.
+
+4.6 You may not remove or change copyright, licence or attribution notices
+    in the Software.
+
+4.7 You are responsible for checking that You qualify under section 2.1.
+    On request, and at most once a year, You will confirm Your eligibility
+    to the Licensor in writing.
+
+
+5. Generated Documents
+
+This licence places no restriction on Generated Documents. You, or whoever
+owns their content, own them, and their recipients need no licence. Fonts,
+images and other content placed in a Generated Document remain subject to
+their own licences.
+
+
+6. Third-party components
+
+Parts of the Software that carry their own licence, such as a bundled font,
+are governed by that licence. The Software's documentation identifies any
+such parts.
+
+
+7. Termination
+
+7.1 Your rights under this licence end automatically if You breach it. If
+    You remedy the breach within 30 days after the Licensor notifies You of
+    it, Your rights are reinstated.
+
+7.2 When Your rights end, You must stop using and distributing the
+    Software. Copies of Your Applications that their users received before
+    then remain licensed to those users.
+
+7.3 Sections 5, 8, 9, 10, 12 and 13 survive termination.
+
+
+8. No warranty
+
+To the extent permitted by applicable law, the Software is provided "as
+is", without warranty of any kind, express or implied, including the
+warranties of merchantability, fitness for a particular purpose and
+non-infringement.
+
+
+9. Limitation of liability
+
+To the extent permitted by applicable law, the Licensor is not liable for
+any damages arising from the Software or its use, whether in contract, tort
+or otherwise. Nothing in this licence excludes or limits any liability that
+cannot be excluded or limited under applicable law.
+
+
+10. Contributions
+
+10.1 "Contribution" means code, documentation or other material that You
+     submit to the Licensor for inclusion in the Software, for example as a
+     pull request or as a patch attached to an issue.
+
+10.2 By submitting a Contribution, You grant the Licensor a perpetual,
+     worldwide, non-exclusive, royalty-free and irrevocable licence to use,
+     copy, modify, sublicense and distribute it, as part of the Software or
+     otherwise, under this licence, under commercial licences or under any
+     other terms the Licensor chooses.
+
+10.3 You also grant the Licensor and every licensee of the Software a
+     perpetual, worldwide, royalty-free and irrevocable licence under any of
+     Your patents that the Contribution necessarily infringes, to make, use,
+     sell and distribute the Contribution as part of the Software.
+
+10.4 You confirm that You created the Contribution or otherwise have the
+     right to grant these licences; that it contains nothing copied from
+     QuestPDF's source code or from any other source whose terms conflict
+     with this licence; and that, where Your employer has rights in the
+     Contribution, Your employer has agreed to it being submitted.
+
+10.5 The Licensor is not obliged to accept or use any Contribution.
+
+
+11. New versions of this licence
+
+The Licensor may publish new versions of this licence. Each release of the
+Software is licensed under the version of this licence that comes with it.
+A new version does not change the terms of a release You have already
+received.
+
+
+12. Governing law
+
+This licence is governed by the laws of the country in which the Licensor
+has its registered office, excluding its conflict-of-laws rules and the
+United Nations Convention on Contracts for the International Sale of Goods.
+To the extent permitted by law, the courts competent for the Licensor's
+registered office have exclusive jurisdiction.
+
+
+13. Severability
+
+If a provision of this licence is invalid or unenforceable, the remaining
+provisions stay in effect, and the invalid provision is replaced by a valid
+one that comes as close as possible to its purpose.
