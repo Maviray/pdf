@@ -1,0 +1,127 @@
+# Builds, tests and publishes the Maviray.Pdf NuGet package to GitHub Packages.
+#
+# - Every push to main (an approved, merged pull request) publishes a release and tags it vX.Y.Z.
+# - A repository admin can run it by hand on any branch to publish a pre-release package of that branch.
+#
+# Versions come from git history: see GitVersion.yml and docs/versions-and-packages.md.
+name: Publish NuGet package
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Nothing by default; the job asks for what it needs.
+permissions: {}
+
+# One run per branch at a time, so two releases can't race for the same tag. A queued run waits; it isn't cancelled.
+concurrency:
+  group: publish-nuget-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  CONFIGURATION: Release
+  PACKAGES_PATH: ${{ github.workspace }}/artifacts/packages
+  FEED_URL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # push the release tag and create the GitHub release (main only)
+      packages: write # push the package to GitHub Packages
+
+    steps:
+      # A run on main is already gated: the ruleset only lets approved pull requests in. Every other run
+      # publishes a package because someone asked for it, so only repository admins may start one.
+      - name: Allow only repository admins to publish by hand
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.triggering_actor }}
+        run: |
+          permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$ACTOR/permission" --jq .permission)
+          if [ "$permission" != "admin" ]; then
+            echo "::error::Only repository admins can publish packages by hand. $ACTOR has '$permission' access."
+            exit 1
+          fi
+          echo "$ACTOR is a repository admin."
+
+      - name: Check out the full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # GitVersion reads the whole history and the tags
+
+      - name: Set up the .NET SDK from global.json
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+        with:
+          versionSpec: '6.8.2'
+
+      - name: Calculate the version
+        id: version
+        uses: gittools/actions/gitversion/execute@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.version.outputs.semVer }}
+          ASSEMBLY_VERSION: ${{ steps.version.outputs.assemblySemVer }}
+          FILE_VERSION: ${{ steps.version.outputs.assemblySemFileVer }}
+        run: >-
+          dotnet build --no-restore -c "$CONFIGURATION"
+          -p:Version="$VERSION" -p:AssemblyVersion="$ASSEMBLY_VERSION" -p:FileVersion="$FILE_VERSION"
+
+      - name: Test
+        run: dotnet test --no-build -c "$CONFIGURATION"
+
+      - name: Pack
+        env:
+          VERSION: ${{ steps.version.outputs.semVer }}
+        run: dotnet pack --no-build -c "$CONFIGURATION" -o "$PACKAGES_PATH" -p:Version="$VERSION"
+
+      # A published version never changes, so a re-run of the same commit is skipped, not overwritten.
+      - name: Publish to GitHub Packages
+        env:
+          NUGET_API_KEY: ${{ secrets.GITHUB_TOKEN }}
+        run: dotnet nuget push "$PACKAGES_PATH/*.nupkg" --source "$FEED_URL" --api-key "$NUGET_API_KEY" --skip-duplicate
+
+      - name: Tag and create the GitHub release
+        if: github.ref == 'refs/heads/main' && steps.version.outputs.preReleaseLabel == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.semVer }}
+        run: |
+          tag="v$VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "$tag already exists, so there is nothing to release."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Maviray.Pdf $VERSION" "$GITHUB_SHA"
+          git push origin "refs/tags/$tag"
+          gh release create "$tag" --verify-tag --title "Maviray.Pdf $VERSION" --generate-notes "$PACKAGES_PATH"/*.nupkg
+
+      - name: Summary
+        if: always() && steps.version.outputs.semVer != ''
+        env:
+          VERSION: ${{ steps.version.outputs.semVer }}
+          BRANCH: ${{ steps.version.outputs.branchName }}
+        run: |
+          {
+            echo "### Maviray.Pdf $VERSION"
+            echo ""
+            echo "- Branch: \`$BRANCH\`"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Feed: $FEED_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

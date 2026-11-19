@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Maviray.Pdf</PackageId>
+    <Description>Fully managed .NET library for generating PDF documents from C# code, with no native or runtime package dependencies.</Description>
+    <PackageTags>pdf;pdf-generation;documents;reports;invoices;maviray</PackageTags>
+  </PropertyGroup>
+
+</Project>
