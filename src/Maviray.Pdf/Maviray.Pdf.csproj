@@ -6,4 +6,9 @@
     <PackageTags>pdf;pdf-generation;documents;reports;invoices;maviray</PackageTags>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Every layer below the fluent API is internal; the tests reach it directly (design document, Architecture). -->
+    <InternalsVisibleTo Include="Maviray.Pdf.Tests" />
+  </ItemGroup>
+
 </Project>
