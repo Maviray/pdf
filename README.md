@@ -2,7 +2,7 @@
 
 A fully managed .NET library for generating PDF documents from C# code. You compose documents through a fluent layout API, and every layer is written in C#: the PDF writer, the font parser and subsetter, text layout, image handling and the layout engine.
 
-> **Status: design phase.** There is no code yet. The [design document](docs/design/Maviray.Pdf-Design-Document.md) is a draft (v0.2). The next milestone is P0 Foundations: the PDF object model, a streaming writer, and a hello-world file that opens cleanly in every major viewer.
+> **Status: early development.** Version 0.0.1 contains only the build and publishing set-up: the `Maviray.Pdf` package exists but has no PDF features yet. The [design document](docs/design/Maviray.Pdf-Design-Document.md) is a draft (v0.2). The next milestone is P0 Foundations: the PDF object model, a streaming writer, and a hello-world file that opens cleanly in every major viewer.
 
 ## Why fully managed
 
@@ -122,15 +122,27 @@ Each phase ends at a gate with a testable criterion; the design document lists t
 
 ## Getting started
 
-You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). The library targets `net10.0`, the current long-term support release.
+You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). The library targets `net10.0`, the current long-term support release, and `global.json` pins the SDK version.
 
-The solution and its build and test commands arrive with P0.
+To build the solution and run the tests, from the repository root:
+
+```bash
+dotnet build
+dotnet test
+```
+
+Packages are published to GitHub Packages. [Versions and packages](docs/versions-and-packages.md) explains how to add the feed and how versions are numbered.
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
-| `docs/design/` | Design document (draft v0.2) |
+| `src/Maviray.Pdf/` | The library |
+| `tests/Maviray.Pdf.Tests/` | Its tests |
+| `docs/` | The design document (draft v0.2), and how versions and packages work |
+| `.github/workflows/` | The build check for pull requests, and package publishing |
+| `GitVersion.yml` | The version rules |
+| `global.json`, `nuget.config`, `Directory.Packages.props` | The SDK version, the package source and the package versions |
 | `CONTRIBUTING.md` | How to report issues and contribute |
 | `LICENSE` | Maviray.Pdf Licence (revenue-gated) |
 
