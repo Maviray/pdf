@@ -43,3 +43,4 @@ The branch `feature/20-truetype-parser` is stacked on `docs/p1-fonts-spec` (PR #
     - the permission check runs after `post`, not straight after `OS/2`;
     - a damaged `name` record the library never reads refuses the font;
     - the fontTools dump could cover the remaining Noto Sans values.
+- **CI after the fixes** (run 44706823225, at `fc6c49d`): 367 of 367 tests succeeded, with 0 skipped.
