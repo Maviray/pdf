@@ -123,6 +123,27 @@ public sealed class CharacterMapTests
         }
     }
 
+    // Real fonts have overlapping format 4 segments, and a lookup takes the first segment whose end code is at or above
+    // the code point. Mappings must give exactly what lookups give: no duplicates, nothing a lookup doesn't map.
+    [Fact]
+    public void Format4MappingsFollowLookupsWhenSegmentsOverlap()
+    {
+        var overlapping = CharacterMap.Parse(
+            TestCmap.Table((3, 1, TestCmap.Format4(new TestSegment(0x41, 0x50, -0x40), new TestSegment(0x45, 0x60, 100 - 0x45)))), 200);
+        var startingEarlier = CharacterMap.Parse(
+            TestCmap.Table((3, 1, TestCmap.Format4(new TestSegment(0x41, 0x50, -0x40), new TestSegment(0x30, 0x60, 70)))), 200);
+
+        Assert.Equal(5, overlapping.GetGlyphId(0x45));
+        Assert.Equal(0, startingEarlier.GetGlyphId(0x30));
+        foreach (var map in new[] { overlapping, startingEarlier })
+        {
+            var mappings = map.Mappings().ToList();
+            Assert.Equal(mappings.OrderBy(m => m.CodePoint).Select(m => m.CodePoint).Distinct(), mappings.Select(m => m.CodePoint));
+            Assert.All(mappings, m => Assert.Equal(map.GetGlyphId(m.CodePoint), m.GlyphId));
+            Assert.Equal(Enumerable.Range(0, 0x80).Count(c => map.GetGlyphId(c) != 0), mappings.Count(m => m.CodePoint < 0x80));
+        }
+    }
+
     [Fact]
     public void MappingsAreAscendingWithoutNotdef()
     {

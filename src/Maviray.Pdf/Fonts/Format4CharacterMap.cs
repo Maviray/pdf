@@ -93,7 +93,11 @@ internal sealed class Format4CharacterMap : CharacterMap
     {
         for (var i = 0; i < _ends.Length; i++)
         {
-            for (int codePoint = _starts[i]; codePoint <= _ends[i]; codePoint++)
+            // Segments may overlap, and a lookup gives a code point to the first segment whose end code is at or above
+            // it. So segment i owns only the codes after the previous segment's end, which keeps this agreeing with
+            // Lookup and strictly ascending.
+            var first = i == 0 ? _starts[i] : Math.Max(_starts[i], _ends[i - 1] + 1);
+            for (var codePoint = first; codePoint <= _ends[i]; codePoint++)
             {
                 if (codePoint is >= 0xD800 and <= 0xDFFF)
                 {

@@ -32,3 +32,14 @@ The branch `feature/20-truetype-parser` is stacked on `docs/p1-fonts-spec` (PR #
   - fontTools isn't installed on the development machine, and installing it means fetching a package, so the five tests skip locally with the install message. The PR's CI run is where they first run.
   - Both workflows install `python3-fonttools` and print its version. `CONTRIBUTING.md` names fontTools and how to install it.
   - Full suite: 352 passed, 12 skipped.
+- **First CI run** (PR #24, run 44702178625, at `d85e861`): 364 of 364 tests succeeded, with 0 skipped. CI's fontTools is 4.61.1, and our parser agrees with it on all four Noto Sans styles.
+- **Whole-branch review** by a fresh reviewer: merge with fixes. Its own sweeps (random multi-byte damage, edge values in every field, shrunk table lengths, Noto's structural tables) found no exception type other than the two documented ones.
+  - **Fixed:** with overlapping format 4 segments, which real fonts have, `CharacterMappings()` gave duplicates and glyphs that lookups don't give. A segment now owns only the codes after the previous segment's end. `Format4MappingsFollowLookupsWhenSegmentsOverlap` was red, then green.
+  - **Fixed:** the damage sweep checked only exception types, so it had let that bug through. It now has a second starting font in format 12 with a `0x00C9` composite, checks each glyph on its own, and asserts that mappings are strictly ascending and agree with lookups. Before the fix it was red, catching the overlap at byte 309.
+  - Full suite: 355 passed, 12 skipped.
+  - **Deferred, minor:**
+    - the `pip install` advice can leave the check skipped, because `-I` hides user installs;
+    - a final `0xFFFF` segment with range offset `0xFFFF` is refused;
+    - the permission check runs after `post`, not straight after `OS/2`;
+    - a damaged `name` record the library never reads refuses the font;
+    - the fontTools dump could cover the remaining Noto Sans values.
