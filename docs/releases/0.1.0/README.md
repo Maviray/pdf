@@ -12,7 +12,7 @@ Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Mav
 | [#11](https://github.com/Maviray/pdf/issues/11) P0.3 | Content-stream builder, with rectangles | Merged 2026-11-19 in [#16](https://github.com/Maviray/pdf/pull/16). Plan: [issue 11](plans/2026-11-19-issue-11-content-stream-builder.md). Log: [issue 11](execution-logs/2026-11-19-issue-11-content-stream-builder.md) |
 | [#12](https://github.com/Maviray/pdf/issues/12) P0.4 | Helvetica text | Merged 2026-11-19 in [#17](https://github.com/Maviray/pdf/pull/17). Plan: [issue 12](plans/2026-11-19-issue-12-helvetica-text.md). Log: [issue 12](execution-logs/2026-11-19-issue-12-helvetica-text.md) |
 | [#13](https://github.com/Maviray/pdf/issues/13) P0.5 | Hello-world gate and the first viewer check | Merged 2026-11-19 in [#18](https://github.com/Maviray/pdf/pull/18); the issue stays open until the viewer check by hand passes. Plan: [issue 13](plans/2026-11-19-issue-13-hello-world-gate.md). Log: [issue 13](execution-logs/2026-11-19-issue-13-hello-world-gate.md). Checklist: [viewer check](../../qa/checklists/viewer-check.md) |
-| P1 fonts spec | Design of P1 Fonts and its four work items | Draft for approval, 2026-11-20. Design: [P1 Fonts](specs/2026-11-20-p1-fonts-design.md) |
+| P1 fonts spec | Design of P1 Fonts and its four work items | Approved, 2026-11-20. Design: [P1 Fonts](specs/2026-11-20-p1-fonts-design.md) |
 | P1 | MVP layout: text, then layout with the fluent API | Each specified after the work before it |
 
 macOS Preview isn't checked in P0, because no Mac is available. The 0.1.0 release check covers it if a Mac is available by then, and otherwise records it as not checked.
