@@ -9,13 +9,17 @@ namespace Maviray.Pdf.Tests.Validation;
 /// </summary>
 internal static class GeneratedFiles
 {
-    public static string Save(byte[] pdf, [CallerFilePath] string file = "", [CallerMemberName] string name = "")
+    public static string Save(byte[] pdf, [CallerFilePath] string file = "", [CallerMemberName] string name = "") =>
+        SaveAs(pdf, ".pdf", file, name);
+
+    /// <summary>As <see cref="Save"/>, for a file of another kind, such as a font.</summary>
+    public static string SaveAs(byte[] pdf, string extension, [CallerFilePath] string file = "", [CallerMemberName] string name = "")
     {
         ArgumentNullException.ThrowIfNull(pdf);
 
         var folder = Path.Combine(AppContext.BaseDirectory, "generated", Path.GetFileNameWithoutExtension(file));
         Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, name + ".pdf");
+        var path = Path.Combine(folder, name + extension);
         File.WriteAllBytes(path, pdf);
         return path;
     }

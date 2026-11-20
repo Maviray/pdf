@@ -1,6 +1,6 @@
 # Maviray.Pdf — Fully Managed .NET PDF Generation Library
 
-**Design Document · Draft v0.3** · Nov 19, 2026 · Yan Doldonov
+**Design Document · Draft v0.4** · Nov 20, 2026 · Yan Doldonov
 
 ## Summary
 
@@ -15,12 +15,14 @@ Why fully managed:
 
 The trade-off is that we own the hard parts that Skia and HarfBuzz would otherwise provide: font subsetting, text shaping and line breaking. Scope control is therefore the main risk, and the roadmap is built around it.
 
-This is draft v0.3. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a revenue-gated licence, a public source repository, and net10.0 as the only target framework. Draft v0.3 settles the questions that were still open:
+This is draft v0.4. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a revenue-gated licence, a public source repository, and net10.0 as the only target framework. Draft v0.3 settled the questions that were still open:
 
 - the one document that defines v1;
 - API naming, the default unit and a default font;
 - when PDF/A-3 and PDF/UA arrive;
 - that only the fluent API is public.
+
+Draft v0.4 takes in the [P1 fonts spec](../releases/0.1.0/specs/2026-11-20-p1-fonts-design.md): the PDF writer uses the font engine, a subset gets one glyph per glyph and character, and a subset keeps a fixed list of tables. It also moves Layers out of FR-06 to P2, where the element catalog already had it.
 
 It is the input for the functional specification and, later, the implementation plan. Open questions records every answer, and the questions deferred to the phase that needs them.
 
@@ -77,7 +79,7 @@ There are 35 starting requirements, each with an ID that the spec and the tests 
 | FR-03 | Header, content and footer slots; header and footer repeat on every page | Must | P1 |
 | FR-04 | Automatic paging: any element tree flows across as many pages as needed | Must | P1 |
 | FR-05 | Current page number and total page count inside text | Must | P1 |
-| FR-06 | Containers: Column, Row (fixed, relative and auto widths), Padding, Align, Width/Height constraints, Background, Border, Layers | Must | P1 |
+| FR-06 | Containers: Column, Row (fixed, relative and auto widths), Padding, Align, Width/Height constraints, Background, Border. Layers follows in P2 | Must | P1 |
 | FR-07 | Rich text spans: family, size, weight, italic, colour, underline, strikethrough, letter spacing, line height; left, center, right and justified alignment | Must | P1 (justify P2) |
 | FR-08 | Embedded, subsetted TrueType (glyf) fonts with a ToUnicode map | Must | P1 |
 | FR-09 | Clear layout errors: content that can never fit throws an exception naming the element path | Must | P1 |
@@ -131,6 +133,7 @@ flowchart TD
     api --> tree --> layout --> canvas --> writer
     layout --> text --> fonts
     canvas --> fonts
+    writer --> fonts
     writer --> images
 
     style layout stroke-width:3px
@@ -314,7 +317,7 @@ Text is the largest engineering cost in a fully managed library, so v1 limits it
 
 Every font is embedded as a subset containing only the glyphs the document uses, in a Type 0 font with Identity-H encoding. This is what makes any Unicode character printable and searchable, and it keeps files small.
 
-**Glyph IDs are assigned on first use.** When the PDF canvas first draws a glyph, it gets the next subset glyph ID (0 is reserved for `.notdef`). Content streams are written with those IDs immediately. The subset font is built once at the end, in the same order, so nothing has to be renumbered or rewritten.
+**Glyph IDs are assigned on first use.** When the PDF canvas first draws a glyph for a character, that pair gets the next subset glyph ID (0 is reserved for `.notdef`). A glyph that stands for two characters, such as a space and a no-break space, gets one ID for each, so each copies out as itself. Content streams are written with those IDs immediately. The subset font is built once at the end, in the same order, so nothing has to be renumbered or rewritten.
 
 **TrueType subset build (P1)**
 
@@ -322,7 +325,7 @@ Every font is embedded as a subset containing only the glyphs the document uses,
 2. **Rebuild `glyf` and `loca`.** Original glyph data is copied, component indices are remapped to subset IDs, and `loca` uses the long format.
 3. **Rebuild metrics.** `hmtx`, `hhea.numberOfHMetrics` and `maxp.numGlyphs` are rewritten for the subset.
 4. **Fix `head`.** Set `indexToLocFormat`, recompute table checksums and `checkSumAdjustment`.
-5. **Keep hinting.** Copy `cvt `, `fpgm` and `prep` unchanged, write `post` as format 3, and drop `cmap`, `kern`, GPOS and GSUB, which the PDF does not need.
+5. **Keep hinting.** Copy `cvt `, `fpgm`, `prep` and `gasp` unchanged, and write `post` as format 3. Drop every other table: `cmap`, `name`, `OS/2`, `kern`, GPOS and GSUB, which the PDF does not need, and `hdmx`, `LTSH` and `VDMX`, which would no longer match the glyph count.
 
 **PDF objects per font**
 

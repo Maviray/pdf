@@ -13,6 +13,15 @@ namespace Maviray.Pdf.Tests.Validation;
 public sealed class ValidatorSelfTests
 {
     [Fact]
+    public void FontToolsRejectsAFileThatIsNotAFont()
+    {
+        FontTools.Python();
+        var path = GeneratedFiles.SaveAs(new byte[100], ".ttf");
+
+        Assert.ThrowsAny<XunitException>(() => FontTools.Dump(path));
+    }
+
+    [Fact]
     public void QpdfRejectsAFileWithAWrongStartxref()
     {
         ExternalTool.Locate("qpdf");

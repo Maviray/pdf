@@ -43,13 +43,14 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -c "$CONFIGURATION"
 
-      # The tests check every generated PDF with tools we didn't write (spec D-11).
-      - name: Install the PDF validators
+      # The tests check every generated PDF, and every font the parser reads, with tools we didn't write (spec D-11, F-13).
+      - name: Install the PDF and font validators
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends qpdf poppler-utils
+          sudo apt-get install -y --no-install-recommends qpdf poppler-utils python3-fonttools
           qpdf --version
           pdftoppm -v
+          python3 -c "import fontTools; print('fontTools', fontTools.version)"
 
       - name: Test
         env:

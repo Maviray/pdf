@@ -37,13 +37,13 @@ Use synthetic content only, never real customer documents.
 
 Run `dotnet build` and `dotnet test` from the repository root.
 
-The tests check every PDF they generate with tools we didn't write: `qpdf --check` for the file structure, and poppler's `pdftoppm` and `pdftotext` for rendering and text. Install them to run these checks locally:
+The tests check every PDF they generate with tools we didn't write: `qpdf --check` for the file structure, and poppler's `pdftoppm` and `pdftotext` for rendering and text. They check the font parser against fontTools, which needs `python3` or `python` on `PATH`. Install them to run these checks locally:
 
-- Linux: `sudo apt-get install qpdf poppler-utils`
-- macOS: `brew install qpdf poppler`
-- Windows: install qpdf and poppler, and put their `bin` folders on `PATH`.
+- Linux: `sudo apt-get install qpdf poppler-utils python3-fonttools`
+- macOS: `brew install qpdf poppler`, and `pip install fonttools`
+- Windows: install qpdf and poppler, put their `bin` folders on `PATH`, and run `pip install fonttools`.
 
-A check whose tool isn't installed is skipped, with a message naming the tool. CI installs both tools and sets `MAVIRAY_PDF_REQUIRE_VALIDATORS=true`, which turns a missing tool into a failure. Set it yourself to make sure nothing was skipped.
+A check whose tool isn't installed is skipped, with a message naming the tool. CI installs all three and sets `MAVIRAY_PDF_REQUIRE_VALIDATORS=true`, which turns a missing tool into a failure. Set it yourself to make sure nothing was skipped.
 
 The generated PDFs and their renders are saved under the test output folder, in `generated/`, and CI uploads them as the `generated-pdfs` artifact of each pull request.
 
