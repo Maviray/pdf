@@ -17,4 +17,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The fontTools check script runs from the test output (spec F-13). It sits inside this project, so every build
+         that compiles the tests has it. -->
+    <None Update="Validation\*.py" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
