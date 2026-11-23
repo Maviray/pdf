@@ -61,6 +61,52 @@ internal sealed class PdfName : PdfObject, IEquatable<PdfName>
 
     public static PdfName FlateDecode { get; } = new("FlateDecode");
 
+    public static PdfName Type0 { get; } = new("Type0");
+
+    public static PdfName IdentityH { get; } = new("Identity-H");
+
+    public static PdfName DescendantFonts { get; } = new("DescendantFonts");
+
+    public static PdfName ToUnicode { get; } = new("ToUnicode");
+
+    public static PdfName CIDFontType2 { get; } = new("CIDFontType2");
+
+    public static PdfName CIDSystemInfo { get; } = new("CIDSystemInfo");
+
+    public static PdfName Registry { get; } = new("Registry");
+
+    public static PdfName Ordering { get; } = new("Ordering");
+
+    public static PdfName Supplement { get; } = new("Supplement");
+
+    public static PdfName FontDescriptor { get; } = new("FontDescriptor");
+
+    public static PdfName W { get; } = new("W");
+
+    public static PdfName CIDToGIDMap { get; } = new("CIDToGIDMap");
+
+    public static PdfName Identity { get; } = new("Identity");
+
+    public static PdfName FontName { get; } = new("FontName");
+
+    public static PdfName Flags { get; } = new("Flags");
+
+    public static PdfName FontBBox { get; } = new("FontBBox");
+
+    public static PdfName ItalicAngle { get; } = new("ItalicAngle");
+
+    public static PdfName Ascent { get; } = new("Ascent");
+
+    public static PdfName Descent { get; } = new("Descent");
+
+    public static PdfName CapHeight { get; } = new("CapHeight");
+
+    public static PdfName StemV { get; } = new("StemV");
+
+    public static PdfName FontFile2 { get; } = new("FontFile2");
+
+    public static PdfName Length1 { get; } = new("Length1");
+
     public string Value { get; }
 
     private static ReadOnlySpan<byte> EscapedPrintables => "#()<>[]{}/%"u8;
