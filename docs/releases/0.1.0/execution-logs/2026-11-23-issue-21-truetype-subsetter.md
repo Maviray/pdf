@@ -47,3 +47,4 @@ The branch `feature/21-truetype-subsetter` is stacked on `feature/20-truetype-pa
     - a truncated composite record is covered only by the sweep;
     - the sweep subsets only the identity list;
     - `Build` checks the embedding permission before its list argument.
+- **CI after the fixes** (run 45111487912, at `9b1f81e`): 436 of 436 tests succeeded, with 0 skipped. The bad-checksum self-test now passes because fontTools checks the checksums.
