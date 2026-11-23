@@ -1,6 +1,6 @@
 # P1 Text: design
 
-**Status:** draft, 2026-11-23, awaiting approval. Release 0.1.0. The second of three specs for phase P1 of the [design document](../../../design/Maviray.Pdf-Design-Document.md) (draft v0.5): fonts, then text, then layout with the fluent API.
+**Status:** approved, 2026-11-23. Release 0.1.0. The second of three specs for phase P1 of the [design document](../../../design/Maviray.Pdf-Design-Document.md) (draft v0.5): fonts, then text, then layout with the fluent API.
 
 ## Intent
 

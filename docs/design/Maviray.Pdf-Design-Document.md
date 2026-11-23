@@ -1,6 +1,6 @@
 # Maviray.Pdf — Fully Managed .NET PDF Generation Library
 
-**Design Document · Draft v0.5** · Nov 23, 2026 · Yan Doldonov
+**Design Document · Draft v0.6** · Nov 23, 2026 · Yan Doldonov
 
 ## Summary
 
@@ -15,7 +15,7 @@ Why fully managed:
 
 The trade-off is that we own the hard parts that Skia and HarfBuzz would otherwise provide: font subsetting, text shaping and line breaking. Scope control is therefore the main risk, and the roadmap is built around it.
 
-This is draft v0.5. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a revenue-gated licence, a public source repository, and net10.0 as the only target framework. Draft v0.3 settled the questions that were still open:
+This is draft v0.6. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a revenue-gated licence, a public source repository, and net10.0 as the only target framework. Draft v0.3 settled the questions that were still open:
 
 - the one document that defines v1;
 - API naming, the default unit and a default font;
@@ -25,6 +25,8 @@ This is draft v0.5. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a 
 Draft v0.4 takes in the [P1 fonts spec](../releases/0.1.0/specs/2026-11-20-p1-fonts-design.md): the PDF writer uses the font engine, a subset gets one glyph per glyph and character, and a subset keeps a fixed list of tables. It also moves Layers out of FR-06 to P2, where the element catalog already had it.
 
 Draft v0.5 takes in the [P1 text spec](../releases/0.1.0/specs/2026-11-23-p1-text-design.md). NFC normalization comes from the library's own implementation, because .NET's depends on ICU. Line metrics come from `OS/2` when the font asks for that, and a word too wide for its line breaks between grapheme clusters. The packages also carry the notice for the Unicode data.
+
+Draft v0.6 takes in the [P1 layout spec](../releases/0.1.0/specs/2026-11-23-p1-layout-design.md). It fixes the public names, which the example below now uses. The layout engine's protocol gets names of its own and `double` lengths. In P1 only the Text element caches, and missing faces aren't synthesized.
 
 It is the input for the functional specification and, later, the implementation plan. Open questions records every answer, and the questions deferred to the phase that needs them.
 
@@ -159,14 +161,14 @@ Document.Create(doc =>
 
     doc.Page(page =>
     {
-        page.Size(PageSizes.A4);
+        page.Size(PageSize.A4);
         page.Margin(20, Unit.Millimetre);
         page.DefaultTextStyle(t => t.FontFamily("Inter").FontSize(10));
 
         page.Header().Row(row =>
         {
-            row.RelativeItem().Text("Rechnung").FontSize(20).Bold();
-            row.ConstantItem(120).Image(logoBytes);
+            row.Flex().Text("Rechnung").FontSize(20).Bold();
+            row.Fixed(120).Image(logoBytes);
         });
 
         page.Content().PaddingVertical(12).Column(col =>
@@ -175,7 +177,7 @@ Document.Create(doc =>
             col.Item().Text(customer.Name).Bold();
             col.Item().Table(table =>
             {
-                table.Columns(c => { c.Relative(3); c.Constant(80); });
+                table.Columns(c => { c.Flex(3); c.Fixed(80); });
                 table.Header(h => { h.Cell().Text("Position"); h.Cell().AlignRight().Text("Betrag"); });
                 foreach (var line in invoice.Lines)
                 {
@@ -187,10 +189,10 @@ Document.Create(doc =>
 
         page.Footer().AlignCenter().Text(t =>
         {
-            t.Span("Seite "); t.CurrentPageNumber(); t.Span(" von "); t.TotalPages();
+            t.Span("Seite "); t.PageNumber(); t.Span(" von "); t.PageCount();
         });
     });
-}).GeneratePdf(outputStream);
+}).Save(outputStream);
 ```
 
 **API principles**
@@ -202,30 +204,30 @@ Document.Create(doc =>
 - **Units.** Points (1/72 inch) are the default in the public API and the only unit inside the library. Every size parameter also has an overload that takes a `Unit`: millimetres, centimetres or inches.
 - **Colours.** A `Color` struct for RGB with hex parsing; CMYK is added in P4.
 - **Settings.** Document-level options: PDF version, conformance level, compression level, deterministic mode, layout diagnostics.
-- **Output.** `GeneratePdf(Stream)`, `GeneratePdf(string path)` and `byte[] GeneratePdf()`. Generation is synchronous and CPU-bound. An async overload only wraps stream writes.
+- **Output.** `Save(Stream)`, `Save(string path)` and `byte[] ToBytes()`. Generation is synchronous and CPU-bound. An async overload only wraps stream writes.
 - **Errors.** Content that can never fit throws `LayoutException` with the element path, for example `Page 3 > Content > Column[2] > Table > Row 14`.
 
-The API shape deliberately resembles QuestPDF so users can migrate easily. Generic layout terms such as Column, Row, Padding, Text and Table stay. Names that are distinctive to QuestPDF get names of our own, for example ShowEntire, EnsureSpace, ShowOnce, SkipOnce, RelativeItem and ConstantItem. The names in this document are working names, and the functional specification fixes the public ones. The implementation must be clean-room (see Packaging and licensing).
+The API shape deliberately resembles QuestPDF so users can migrate easily. Generic layout terms such as Column, Row, Padding, Text and Table stay. Names that are distinctive to QuestPDF get names of our own, for example ShowEntire, EnsureSpace, ShowOnce, SkipOnce, RelativeItem and ConstantItem. The P1 layout spec fixes the public names, and this document uses them. The names of P2 and later elements are still working names, fixed by the spec of their phase. The implementation must be clean-room (see Packaging and licensing).
 
 ## Layout engine
 
 The layout engine runs a two-phase protocol. Each element is first measured against the space available, then drawn. Measuring reports whether the element fits fully, fits partly, or does not fit at all. Paging, splitting and keep-together rules all follow from that single contract.
 
 ```csharp
-public enum SpacePlanKind { Wrap, PartialRender, FullRender }
+public enum Fit { None, Partial, Full }
 
-public readonly record struct SpacePlan(SpacePlanKind Kind, float Width, float Height);
+public readonly record struct Measurement(Fit Fit, double Width, double Height);
 
 public abstract class Element
 {
     // Pure: may run many times per page and must not change state.
-    public abstract SpacePlan Measure(Size available, LayoutContext context);
+    public abstract Measurement Measure(Size available, LayoutContext context);
 
     // Commits: draws what fits and advances the element's cursor.
     public abstract void Draw(Size available, DrawContext context);
 
     // Restores the initial state before a new generation pass.
-    public virtual void ResetState() { }
+    public virtual void Reset() { }
 
     public virtual IReadOnlyList<Element> Children => [];
 }
@@ -233,17 +235,17 @@ public abstract class Element
 
 **Contract**
 
-- **FullRender:** everything remaining fits in the returned width and height.
-- **PartialRender:** part fits. `Draw` renders that part, and the rest continues on the next page.
-- **Wrap:** nothing fits here, so the parent moves the element to the next page.
+- **Full:** everything remaining fits in the returned width and height.
+- **Partial:** part fits. `Draw` renders that part, and the rest continues on the next page.
+- **None:** nothing fits here, so the parent moves the element to the next page.
 - `Measure` has no side effects and gives the same answer for the same state and size. That is what makes caching safe.
 - A returned size never exceeds the available size.
-- After a PartialRender, `Draw` must consume at least one unit (a line, a row, a child). Otherwise the engine stops with a no-progress error rather than looping forever.
+- After a Partial, `Draw` must consume at least one unit (a line, a row, a child). Otherwise the engine stops with a no-progress error rather than looping forever.
 
 **Generation passes**
 
-1. **Layout pass.** Runs the paging loop against a null canvas. It counts pages and records the positions of named sections for total pages, tables of contents and internal links. No text encoding or image work is done.
-2. **Reset.** Calls `ResetState` on the whole tree.
+1. **Layout pass.** Runs the paging loop against a null canvas. It counts pages and records the positions of named sections for total pages, tables of contents and internal links. No text encoding or image work is done. When a page count shows in the text, the layout pass repeats until it ends with the count it showed, at most three times (P1 layout spec, L-04).
+2. **Reset.** Calls `Reset` on the whole tree.
 3. **Render pass.** Runs the loop again against the PDF canvas, with page totals and positions now known.
 
 If the tree uses no total-pages span, table of contents or forward link, the layout pass is skipped.
@@ -277,19 +279,19 @@ A page that ends with a partial fit loops back for the next page. Content that c
 | Table | Grid with header and footer rows and spans | Splits by row; tall rows split inside | P2 |
 | Image | Raster image with a fit mode | Never splits; moves to the next page | P2 |
 | Layers | Stacks children in z-order (watermarks, backgrounds) | Primary layer drives paging | P2 |
-| ShowEntire, EnsureSpace | Keep content together, or require minimum space | Turns a partial fit into Wrap | P2 |
+| ShowEntire, EnsureSpace | Keep content together, or require minimum space | Turns a partial fit into None | P2 |
 | ShowOnce, SkipOnce, ShowIf | Page-conditional visibility | Follows the child | P2 |
 | Canvas | User-drawn vector content of a fixed size | Never splits | P2 |
 | Section, Hyperlink | Named location for links and contents; clickable area | Follows the child | P3 |
 
 **Key algorithms**
 
-- **Column** measures children from its cursor, adds their heights, and stops at the first partial fit or Wrap. Spacing is added only between items on the same page. It returns Wrap only when its first remaining child wraps.
+- **Column** measures children from its cursor, adds their heights, and stops at the first Partial or None. Spacing is added only between items on the same page. It returns None only when its first remaining child does.
 - **Row** resolves widths in order: constant, then auto (the child measured at unlimited width), then relative shares of the rest. Its height is the tallest unfinished cell. If any cell wraps, the whole row wraps. A cell that finished on an earlier page draws nothing on later pages.
-- **Text** lays out lines once per width and caches them. Measuring counts how many lines from the cursor fit; zero lines means Wrap.
+- **Text** lays out lines once per width and caches them. Measuring counts how many lines from the cursor fit; zero lines means None.
 - **Impossible content.** An element that wraps on a fresh, empty page can never fit, so the engine throws `LayoutException`. ShowEntire on content taller than a page falls back to splitting and logs a warning.
 
-**Caching and diagnostics.** Measure results are cached per element by available size and state version, and `Draw` invalidates them. A debug mode draws element bounds and names on the page. Every layout exception reports the element path, the available size and the requested size.
+**Caching and diagnostics.** In P1 only the Text element caches: it keeps its line layout per width. Caching other measure results waits for the P3 benchmarks. A debug mode draws element bounds and names on the page. Every layout exception reports the element path, the available size and the requested size.
 
 ## Text and typography
 
@@ -310,7 +312,7 @@ Text is the largest engineering cost in a fully managed library, so v1 limits it
 **Fonts**
 
 - **Registration only.** Fonts are registered from a stream, byte array or file path. The core never scans system fonts; that is a separate optional package. This is what keeps behaviour identical on servers, containers and WebAssembly.
-- **Matching.** Family, weight (100 to 900) and style, resolved to the nearest available face with CSS-style weight matching. Synthetic bold and italic are a fallback that logs a warning.
+- **Matching.** Family, weight (100 to 900) and style, resolved to the nearest available face with CSS-style weight matching. P1 synthesizes nothing: a missing face falls back to the nearest one and raises a diagnostic. Synthetic bold and italic may follow later.
 - **Fallback.** A style can name an ordered list of families, and each grapheme falls back to the first family that covers it. A glyph no font covers renders as `.notdef` and raises a diagnostic event.
 - **Parsed once.** A loaded font is immutable and shared across documents and threads. Subset state belongs to each document.
 - **Not in v1:** variable-font instancing, TrueType Collections (`.ttc`) and colour fonts. Each throws a clear `NotSupportedException`.
@@ -520,7 +522,7 @@ Scope is the biggest risk. Each phase therefore ends in a working, usable librar
 | --- | --- | --- |
 | Feature creep towards full QuestPDF parity | High | v1 is defined by one real document (see Driving document); phase gates; non-goals list; e-invoice XML stays the caller's |
 | Solo side project stalls before it is useful | High | P1 is small and usable on its own; dogfood it on a real internal document early |
-| Layout engine loops forever or splits content unpredictably | High | Strict SpacePlan contract, no-progress detection, element-path errors, recording-canvas tests |
+| Layout engine loops forever or splits content unpredictably | High | Strict measure contract, no-progress detection, element-path errors, recording-canvas tests |
 | Text shaping scope grows (complex scripts, variable fonts) | High | v1 limited to Latin, Cyrillic and Greek; `IShaper` seam for later; clear NotSupported errors |
 | Viewer incompatibilities (Acrobat, PDFium, pdf.js, Preview) | Medium | Multi-viewer rendering checks from P0; qpdf on every file |
 | Font edge cases: CFF, broken tables, odd cmaps | Medium | glyf fonts first; open-font test corpus; fuzzing |
