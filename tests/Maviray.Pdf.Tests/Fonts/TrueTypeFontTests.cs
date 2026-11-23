@@ -49,6 +49,30 @@ public sealed class TrueTypeFontTests
         Assert.Equal([500, 250, 250, 250], Enumerable.Range(0, 4).Select(g => font.GetAdvanceWidth((ushort)g)));
     }
 
+    // Glyph 2 is past numberOfHMetrics, so its side bearing comes from hmtx's second array and its advance is the last one.
+    [Fact]
+    public void LeftSideBearingsComeFromHmtx()
+    {
+        var font = TrueTypeFont.Load(new TestFontBuilder()
+            .ClearGlyphs()
+            .SimpleGlyph(500, 50, 0, 450, 700)
+            .SimpleGlyph(600, 30, 0, 600, 700)
+            .SimpleGlyph(650, -20, 0, 650, 700)
+            .NumberOfHMetrics(2)
+            .Build());
+
+        Assert.Equal([50, 30, -20], Enumerable.Range(0, 3).Select(g => font.GetLeftSideBearing((ushort)g)));
+        Assert.Equal(600, font.GetAdvanceWidth(2));
+    }
+
+    [Fact]
+    public void LeftSideBearingRefusesAGlyphPastTheFont()
+    {
+        var font = TrueTypeFont.Load(new TestFontBuilder().Build());
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => font.GetLeftSideBearing(4));
+    }
+
     [Fact]
     public void GlyphDataAndHeaders()
     {

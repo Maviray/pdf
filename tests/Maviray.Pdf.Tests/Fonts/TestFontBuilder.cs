@@ -295,7 +295,9 @@ internal sealed class TestFontBuilder
                 Put16(bytes, _glyphs[i].Advance);
             }
 
-            Put16(bytes, 0); // left side bearing
+            // The left side bearing is the glyph's xMin, as in real fonts; an empty glyph has 0.
+            var data = _glyphs[i].Data;
+            Put16(bytes, data.Length >= 4 ? BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(2)) : (ushort)0);
         }
 
         return [.. bytes];
