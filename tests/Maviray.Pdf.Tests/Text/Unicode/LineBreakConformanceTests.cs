@@ -23,15 +23,20 @@ public sealed class LineBreakConformanceTests
         {
             lines++;
             var kinds = LineBreaker.FindBreaks(text);
+            var codePoints = text.EnumerateRunes().Select(r => r.Value).ToList();
             for (var b = 1; b < positions.Count; b++)
             {
+                // The file writes every break the same way. A required one is the end of the text, or follows a break
+                // character of T-06; anything else that breaks is only allowed.
+                var expected = !breaks[b] ? LineBreakKind.None
+                    : b == positions.Count - 1 || EndsALine(codePoints, b) ? LineBreakKind.Required
+                    : LineBreakKind.Allowed;
                 var actual = kinds[positions[b]];
-                if ((actual != LineBreakKind.None) != breaks[b])
+                if (actual != expected)
                 {
                     var rule = b < rules.Count ? rules[b] : "?";
                     failures.Add(
-                        $"line {lineNumber}, boundary {b} of {CodePoints(text)}: expected {(breaks[b] ? "break" : "no break")}, " +
-                        $"got {actual} (rule {rule})");
+                        $"line {lineNumber}, boundary {b} of {CodePoints(text)}: expected {expected}, got {actual} (rule {rule})");
                 }
             }
         }
@@ -76,6 +81,21 @@ public sealed class LineBreakConformanceTests
             var rules = hash < 0 ? [] : RuleNumbers.Matches(line[hash..]).Select(m => m.Groups[1].Value).ToList();
             yield return (i + 1, text.ToString(), positions, breaks, rules);
         }
+    }
+
+    /// <summary>
+    /// Whether boundary <paramref name="b"/> follows a break character: BK (U+000B, U+000C, U+2028, U+2029), LF,
+    /// NEL, or a CR that no LF follows. The list is the spec's (T-06), not the breaker's table.
+    /// </summary>
+    private static bool EndsALine(List<int> codePoints, int b)
+    {
+        var before = codePoints[b - 1];
+        if (before == 0x000D)
+        {
+            return b == codePoints.Count || codePoints[b] != 0x000A;
+        }
+
+        return before is 0x000B or 0x000C or 0x2028 or 0x2029 or 0x000A or 0x0085;
     }
 
     private static string CodePoints(string text) =>

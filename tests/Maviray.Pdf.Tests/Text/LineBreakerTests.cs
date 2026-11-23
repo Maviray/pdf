@@ -69,33 +69,59 @@ public sealed class LineBreakerTests
         Assert.Equal([None, Required, Required], LineBreaker.FindBreaks("\n" + acute));
     }
 
+    // LB8a looks at the last code point of the item before the boundary: a ZWJ that joined a base forbids the break
+    // after it, although the item's class is the base's.
+    [Fact]
+    public void ZwjAttachedToABaseForbidsTheBreakAfterIt()
+    {
+        var zwj = char.ConvertFromUtf32(0x200D);
+
+        Assert.Equal([None, None, None, Required], LineBreaker.FindBreaks("a" + zwj + char.ConvertFromUtf32(0x4E00)));
+
+        // A man, ZWJ, a woman: FindBreaks, without the cluster rule of BreakOpportunities, breaks nowhere inside.
+        var family = char.ConvertFromUtf32(0x1F468) + zwj + char.ConvertFromUtf32(0x1F469);
+        Assert.Equal([None, None, None, None, None, Required], LineBreaker.FindBreaks(family));
+    }
+
+    // P1.5 replaces unpaired surrogates before line breaking, but the breaker still reads one as its own code unit,
+    // class SG, which LB1 makes AL.
+    [Fact]
+    public void ReadsUnpairedSurrogatesAsAlphabetic()
+    {
+        Assert.Equal([None, None, None, Required], LineBreaker.FindBreaks("a" + (char)0xD800 + "b"));
+        Assert.Equal([None, None, Required], LineBreaker.FindBreaks(string.Concat((char)0xDE00, (char)0xD83D)));
+        Assert.Equal([None, None, Required], LineBreaker.FindBreaks("x" + (char)0xD83D));
+    }
+
     [Fact]
     public void RefusesNull()
     {
         Assert.Throws<ArgumentNullException>(() => LineBreaker.FindBreaks(null!));
     }
 
-    // Each run would be quadratic if a rule scanned it again at every boundary.
+    // LB30a is the one rule that looks back at every boundary of a run: a parity count that scanned the run of
+    // regional indicators again at each boundary would take about 5 * 10^11 steps here, far past the time limit.
+    // The other two runs check that a rule still holds across a very long run.
     [Fact(Timeout = 10_000)]
     public async Task LongRunsStayLinear()
     {
-        const int Run = 100_000;
         var token = TestContext.Current.CancellationToken;
 
+        const int Flags = 1_000_000;
+        var flags = string.Concat(Enumerable.Repeat(char.ConvertFromUtf32(0x1F1E6), Flags));
+        var flagBreaks = await Task.Run(() => LineBreaker.FindBreaks(flags), token);
+        Assert.Equal(None, flagBreaks[2]);
+        Assert.Equal(Allowed, flagBreaks[4]);
+        Assert.Equal(None, flagBreaks[(2 * Flags) - 2]);
+
         // LB14: no break after an opening parenthesis and any number of spaces.
+        const int Run = 100_000;
         var spaces = "(" + new string(' ', Run) + "a";
         var spaceBreaks = await Task.Run(() => LineBreaker.FindBreaks(spaces), token);
         Assert.Equal(None, spaceBreaks[Run + 1]);
 
-        // LB30a: regional indicators pair up, so only every second boundary between them may break.
-        var flags = string.Concat(Enumerable.Repeat(char.ConvertFromUtf32(0x1F1E6), Run));
-        var flagBreaks = await Task.Run(() => LineBreaker.FindBreaks(flags), token);
-        Assert.Equal(None, flagBreaks[2]);
-        Assert.Equal(Allowed, flagBreaks[4]);
-        Assert.Equal(None, flagBreaks[(2 * Run) - 2]);
-
-        // LB25: a number with any run of infix separators stays together.
-        var number = "1" + new string('.', Run) + "1";
+        // LB25: no break between NU (SY | IS)* and PO, looking back over the whole run of full stops to the digit.
+        var number = "1" + new string('.', Run) + "%";
         var numberBreaks = await Task.Run(() => LineBreaker.FindBreaks(number), token);
         Assert.Equal(None, numberBreaks[Run + 1]);
     }
