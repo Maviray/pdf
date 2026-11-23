@@ -47,6 +47,52 @@ internal static class Poppler
         return result.StandardOutput.TrimEnd(' ', '\t', '\r', '\n', '\f');
     }
 
+    /// <summary>
+    /// Lists the fonts with <c>pdffonts</c>. The columns are found by their header names over the dashed line, so the
+    /// parse works with poppler's <c>encoding</c> column and with xpdf's pdffonts, which has none. Blind spot: a name
+    /// longer than its column, which pdffonts lets run into the next one, would be cut.
+    /// </summary>
+    public static IReadOnlyList<PdfFontReport> ListFonts(string path)
+    {
+        var result = ExternalTool.Run("pdffonts", path);
+        if (result.ExitCode != 0)
+        {
+            Assert.Fail($"pdffonts exited with {result.ExitCode} for {path}:\n{result.StandardError}");
+        }
+
+        var lines = result.StandardOutput.Split('\n').Select(line => line.TrimEnd('\r')).ToList();
+        var dashes = lines.FindIndex(line => line.StartsWith("---", StringComparison.Ordinal));
+        Assert.True(dashes > 0, $"pdffonts printed no table for {path}:\n{result.StandardOutput}");
+
+        var columns = new Dictionary<string, (int Start, int Length)>(StringComparer.Ordinal);
+        for (var start = 0; start < lines[dashes].Length;)
+        {
+            var end = lines[dashes].IndexOf(' ', start);
+            end = end < 0 ? lines[dashes].Length : end;
+            columns[Cell(lines[dashes - 1], start, end - start)] = (start, end - start);
+            start = end + 1;
+        }
+
+        string Column(string row, string header)
+        {
+            var (start, length) = columns[header];
+            return Cell(row, start, length);
+        }
+
+        return lines.Skip(dashes + 1)
+            .Where(row => row.Trim().Length > 0)
+            .Select(row => new PdfFontReport(
+                Column(row, "name"),
+                Column(row, "type"),
+                Column(row, "emb") == "yes",
+                Column(row, "sub") == "yes",
+                Column(row, "uni") == "yes"))
+            .ToList();
+    }
+
+    private static string Cell(string row, int start, int length) =>
+        start >= row.Length ? string.Empty : row.Substring(start, Math.Min(length, row.Length - start)).Trim();
+
     private static int PageNumber(string file, string stem) =>
         int.Parse(Path.GetFileNameWithoutExtension(file)[(stem.Length + 1)..], CultureInfo.InvariantCulture);
 }

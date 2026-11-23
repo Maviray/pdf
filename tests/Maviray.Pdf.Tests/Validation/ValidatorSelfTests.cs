@@ -50,6 +50,23 @@ public sealed class ValidatorSelfTests
     }
 
     [Fact]
+    public void PdffontsReportsHelveticaAsNotEmbedded()
+    {
+        ExternalTool.Locate("pdffonts");
+        var path = GeneratedFiles.Save(PdfDocumentWriterTests.Write(document =>
+        {
+            var page = document.BeginPage(200, 200);
+            page.Content.BeginText().SetFont(StandardFont.Helvetica, 12).ShowText("Hello").EndText();
+            document.EndPage(page);
+        }));
+
+        var font = Assert.Single(Poppler.ListFonts(path));
+
+        Assert.Equal("Helvetica", font.Name);
+        Assert.False(font.Embedded);
+    }
+
+    [Fact]
     public void QpdfRejectsAFileWithAWrongStartxref()
     {
         ExternalTool.Locate("qpdf");
