@@ -48,3 +48,4 @@ The branch `feature/31-line-breaking` is stacked on `feature/30-unicode-data-nfc
   - **Deferred, minor:**
     - no test covers `(PO | PR) × OP IS NU` of LB25;
     - `UcdFiles` adds a third private `Hex` helper.
+- **First CI run** (PR #41, run 45207879743, at `c9c0cfd`): 698 of 698 tests succeeded, with 0 skipped. The text tests without ICU passed 196 of 196.
