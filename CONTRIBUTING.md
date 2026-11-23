@@ -58,7 +58,7 @@ The text engine's Unicode tables are generated from the Unicode Character Databa
   MAVIRAY_PDF_WRITE_UNICODE_TABLES=true dotnet test --project tests/Maviray.Pdf.Tests --filter-class "Maviray.Pdf.Tests.Text.Unicode.UnicodeTablesTests"
   ```
 
-  If the old tables no longer compile, delete them first: the test project builds the library.
+  The generator lives in the test project, which builds the library first, so the library must compile at every step. To change the shape of a table, go in steps that each compile: make the generator write the new table beside the old one and regenerate, move the lookups in `src/Maviray.Pdf/Text/` to the new table, then remove the old one from the generator and regenerate again. If the tables stop compiling on the way, restore the committed ones with `git checkout -- src/Maviray.Pdf/Text/Unicode/`. Deleting them doesn't help, because the lookups need them.
 - **Without ICU.** The text engine must give the same result on every platform, so it uses neither ICU nor culture data. CI runs the text tests a second time in invariant-globalization mode. To do the same locally:
 
   ```bash

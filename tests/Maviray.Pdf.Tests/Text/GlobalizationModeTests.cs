@@ -11,8 +11,8 @@ public sealed class GlobalizationModeTests
         var variable = Environment.GetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT");
         var invariant = string.Equals(variable, "true", StringComparison.OrdinalIgnoreCase) || variable == "1";
 
-        var composed = "é".Normalize();
+        var composed = "e\u0301".Normalize();
 
-        Assert.Equal(invariant ? "é" : "é", composed);
+        Assert.Equal(invariant ? "e\u0301" : "\u00E9", composed);
     }
 }
