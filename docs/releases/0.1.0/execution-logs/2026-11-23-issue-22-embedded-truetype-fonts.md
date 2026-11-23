@@ -40,3 +40,4 @@ The branch `feature/22-embedded-truetype-fonts` is stacked on `feature/21-truety
     - `Close` can write some fonts before a later one fails;
     - some test pins are weaker than they could be;
     - no end-to-end check of a character above U+FFFF.
+- **CI after the fixes** (run 45114566466, at `15ff61d`): 501 of 501 tests succeeded, with 0 skipped. Real pdffonts printed nothing on stderr for any generated file.
