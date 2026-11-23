@@ -10,7 +10,7 @@ internal sealed class ContentStreamBuilder : IDisposable
     private readonly MemoryStream _buffer = new();
     private readonly PdfOutput _output;
     private readonly FontResources? _fonts;
-    private readonly List<StandardFont> _fontsUsed = [];
+    private readonly List<PdfFont> _fontsUsed = [];
     private readonly Stack<GraphicsState> _saved = new();
 
     // Every tracked value starts unknown (null), so the first setting on a page is always written. The font belongs to
@@ -37,7 +37,7 @@ internal sealed class ContentStreamBuilder : IDisposable
     public bool IsEmpty => _output.Position == 0;
 
     /// <summary>The fonts this content stream set, each once, for the page's <c>/Resources</c>.</summary>
-    public IReadOnlyCollection<StandardFont> FontsUsed => _fontsUsed;
+    public IReadOnlyCollection<PdfFont> FontsUsed => _fontsUsed;
 
     /// <summary>Writes <c>q</c>: saves the graphics state, including the tracked values.</summary>
     public ContentStreamBuilder SaveState()
@@ -162,7 +162,8 @@ internal sealed class ContentStreamBuilder : IDisposable
     /// <exception cref="InvalidOperationException">This builder has no font resources, or no text object is open.</exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="size"/> isn't a number a PDF can hold. Nothing is
     /// written, reserved or tracked then.</exception>
-    public ContentStreamBuilder SetFont(StandardFont font, double size)
+    /// <exception cref="ArgumentException"><paramref name="font"/> was embedded in another document (NFR-04).</exception>
+    public ContentStreamBuilder SetFont(PdfFont font, double size)
     {
         ArgumentNullException.ThrowIfNull(font);
         ThrowIfNotInText("SetFont (Tf)");
@@ -170,6 +171,12 @@ internal sealed class ContentStreamBuilder : IDisposable
         if (_fonts is null)
         {
             throw new InvalidOperationException("This content stream has no font resources, so it can't set a font.");
+        }
+
+        if (font is EmbeddedFont embedded && !ReferenceEquals(embedded.Resources, _fonts))
+        {
+            throw new ArgumentException(
+                "The font was embedded in another document. Embed the TrueType font in this document with EmbedFont.", nameof(font));
         }
 
         if (ReferenceEquals(_state.Font, font) && _state.FontSize == size)
@@ -200,9 +207,10 @@ internal sealed class ContentStreamBuilder : IDisposable
         return Operator("Tm"u8);
     }
 
-    /// <summary>Writes <c>Tj</c>: shows <paramref name="text"/> in the current font, encoded with WinAnsi.</summary>
+    /// <summary>Writes <c>Tj</c>: shows <paramref name="text"/> in the current standard font, encoded with WinAnsi.</summary>
     /// <exception cref="ArgumentException">A character has no WinAnsi code. Nothing is written then.</exception>
-    /// <exception cref="InvalidOperationException">No text object is open, or no font is set.</exception>
+    /// <exception cref="InvalidOperationException">No text object is open, no font is set, or the font is an embedded
+    /// one, which <see cref="ShowGlyphs"/> draws.</exception>
     public ContentStreamBuilder ShowText(string text)
     {
         ThrowIfNotInText("ShowText (Tj)");
@@ -211,9 +219,51 @@ internal sealed class ContentStreamBuilder : IDisposable
             throw new InvalidOperationException("ShowText (Tj) needs a font. Call SetFont first.");
         }
 
+        if (_state.Font is not StandardFont)
+        {
+            throw new InvalidOperationException("ShowText (Tj) draws a standard font. Draw an embedded font with ShowGlyphs.");
+        }
+
         // Encoded before anything is written, so an unencodable character leaves the stream unchanged.
         var bytes = WinAnsiEncoding.Encode(text);
         PdfString.WriteLiteral(_output, bytes);
+        _output.WriteByte((byte)' ');
+        return Operator("Tj"u8);
+    }
+
+    /// <summary>
+    /// Writes <c>Tj</c>: shows <paramref name="cids"/> in the current embedded font, as one hex string of four uppercase
+    /// digits per CID (spec F-10).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">No text object is open, no font is set, or the font is a standard
+    /// one, which <see cref="ShowText"/> draws.</exception>
+    /// <exception cref="ArgumentException">A CID is 0 or one the font hasn't assigned. Nothing is written then.</exception>
+    public ContentStreamBuilder ShowGlyphs(ReadOnlySpan<ushort> cids)
+    {
+        ThrowIfNotInText("ShowGlyphs (Tj)");
+        if (_state.Font is not EmbeddedFont font)
+        {
+            throw new InvalidOperationException(_state.Font is null
+                ? "ShowGlyphs (Tj) needs a font. Call SetFont first."
+                : "ShowGlyphs (Tj) draws an embedded font. Draw a standard font with ShowText.");
+        }
+
+        foreach (var cid in cids)
+        {
+            if (!font.IsAssigned(cid))
+            {
+                throw new ArgumentException($"CID {cid} isn't one the font has assigned. Get CIDs from EmbeddedFont.Encode.", nameof(cids));
+            }
+        }
+
+        _output.WriteByte((byte)'<');
+        foreach (var cid in cids)
+        {
+            _output.WriteHex((byte)(cid >> 8));
+            _output.WriteHex((byte)cid);
+        }
+
+        _output.WriteByte((byte)'>');
         _output.WriteByte((byte)' ');
         return Operator("Tj"u8);
     }
@@ -337,5 +387,5 @@ internal sealed class ContentStreamBuilder : IDisposable
     }
 
     // The values the builder tracks; null means not known yet.
-    private record struct GraphicsState(RgbColor? Fill, RgbColor? Stroke, double? LineWidth, StandardFont? Font, double? FontSize);
+    private record struct GraphicsState(RgbColor? Fill, RgbColor? Stroke, double? LineWidth, PdfFont? Font, double? FontSize);
 }

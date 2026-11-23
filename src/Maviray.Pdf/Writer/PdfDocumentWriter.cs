@@ -1,3 +1,5 @@
+using Maviray.Pdf.Fonts;
+
 namespace Maviray.Pdf.Writer;
 
 /// <summary>
@@ -21,6 +23,17 @@ internal sealed class PdfDocumentWriter : IDisposable
 
         // Reserved first, so every page dictionary can name its /Parent as soon as it is written.
         _pageTree = _file.Reserve();
+    }
+
+    /// <summary>
+    /// This document's embedded font for <paramref name="font"/>, the same instance for the same font (spec F-10). It is
+    /// written when the document closes, and only if a page set it.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The document is closed.</exception>
+    public EmbeddedFont EmbedFont(TrueTypeFont font)
+    {
+        ThrowIfClosed();
+        return _fonts.Embed(font);
     }
 
     /// <summary>Opens a page of <paramref name="width"/> by <paramref name="height"/> points.</summary>
