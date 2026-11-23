@@ -19,7 +19,7 @@ Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Mav
 | [#23](https://github.com/Maviray/pdf/issues/23) P1.4 | Fonts gate | Merged 2026-11-23 in [#27](https://github.com/Maviray/pdf/pull/27). Plan: [issue 23](plans/2026-11-23-issue-23-fonts-gate.md). Log: [issue 23](execution-logs/2026-11-23-issue-23-fonts-gate.md). Checklist: [viewer check](../../qa/checklists/viewer-check.md) |
 | P1 text spec | Design of P1 Text and its four work items | Approved, 2026-11-23, merged in [#28](https://github.com/Maviray/pdf/pull/28). Design: [P1 Text](specs/2026-11-23-p1-text-design.md) |
 | [#30](https://github.com/Maviray/pdf/issues/30) P1.5 | Unicode data and NFC | In review, 2026-11-23. Plan: [issue 30](plans/2026-11-23-issue-30-unicode-data-nfc.md). Log: [issue 30](execution-logs/2026-11-23-issue-30-unicode-data-nfc.md) |
-| P1 layout spec | Design of P1 Layout and fluent API and its six work items | Draft, 2026-11-23, awaiting approval. Design: [P1 Layout](specs/2026-11-23-p1-layout-design.md) |
+| P1 layout spec | Design of P1 Layout and fluent API and its six work items | Approved, 2026-11-23, merged in [#29](https://github.com/Maviray/pdf/pull/29). Design: [P1 Layout](specs/2026-11-23-p1-layout-design.md) |
 
 macOS Preview isn't checked in P0, because no Mac is available. The 0.1.0 release check covers it if a Mac is available by then, and otherwise records it as not checked.
 
