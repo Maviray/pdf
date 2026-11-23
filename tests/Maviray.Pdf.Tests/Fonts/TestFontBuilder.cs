@@ -19,6 +19,7 @@ internal sealed class TestFontBuilder
     private uint _sfntVersion = 0x00010000;
     private ushort _unitsPerEm = 1000;
     private short _indexToLocFormat = 1;
+    private int _glyphAlignment = 4;
     private short _ascender = 800;
     private short _descender = -200;
     private short _lineGap;
@@ -50,6 +51,9 @@ internal sealed class TestFontBuilder
     public TestFontBuilder UnitsPerEm(ushort value) => Set(() => _unitsPerEm = value);
 
     public TestFontBuilder IndexToLocFormat(short format) => Set(() => _indexToLocFormat = format);
+
+    /// <summary>The boundary each glyph's data is padded to: 4 by default, and 1 for none, which only long <c>loca</c> can describe.</summary>
+    public TestFontBuilder GlyphAlignment(int bytes) => Set(() => _glyphAlignment = bytes);
 
     public TestFontBuilder LineMetrics(short ascender, short descender, short lineGap) =>
         Set(() => (_ascender, _descender, _lineGap) = (ascender, descender, lineGap));
@@ -318,7 +322,7 @@ internal sealed class TestFontBuilder
         {
             PutLoca(loca, glyf.Count);
             glyf.AddRange(data);
-            glyf.AddRange(new byte[((data.Length + 3) & ~3) - data.Length]);
+            glyf.AddRange(new byte[(_glyphAlignment - (data.Length % _glyphAlignment)) % _glyphAlignment]);
         }
 
         PutLoca(loca, glyf.Count);
