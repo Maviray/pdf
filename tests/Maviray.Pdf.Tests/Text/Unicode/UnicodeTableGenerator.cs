@@ -15,7 +15,7 @@ internal static class UnicodeTableGenerator
     public static IReadOnlyList<GeneratedFile> Generate()
     {
         var model = NormalizationModel.Load();
-        return [NfcProperties(model), Decompositions(model), Compositions(model), LineBreaks(LineBreakModel.Load())];
+        return [NfcProperties(model), Decompositions(model), Compositions(model), LineBreaks(LineBreakModel.Load()), Characters(CharacterModel.Load())];
     }
 
     private static GeneratedFile NfcProperties(NormalizationModel model) =>
@@ -23,6 +23,7 @@ internal static class UnicodeTableGenerator
             "NfcPropertyData",
             "Each code point's canonical combining class and NFC_Quick_Check value, in a two-stage table.",
             NormalizationModel.SourceFiles,
+            "ushort",
             codePoint => model.CombiningClass(codePoint) | ((int)model.QuickCheck(codePoint) << 8),
             "An entry holds the combining class in its low byte and the NfcQuickCheck value in bits 8 and 9.");
 
@@ -31,6 +32,7 @@ internal static class UnicodeTableGenerator
             "LineBreakData",
             "Each code point's line-break class after LB1 of UAX #14, and the flags its rules test, in a two-stage table.",
             LineBreakModel.SourceFiles,
+            "ushort",
             codePoint => (int)model.ResolvedClass(codePoint)
                 | (model.IsEastAsian(codePoint) ? 1 << 6 : 0)
                 | (model.IsInitialQuote(codePoint) ? 1 << 7 : 0)
@@ -39,12 +41,23 @@ internal static class UnicodeTableGenerator
             "An entry holds the LineBreakClass in bits 0 to 5, East Asian width F, W or H in bit 6, a QU that is Pi in bit 7, " +
             "a QU that is Pf in bit 8, and Extended_Pictographic and unassigned in bit 9.");
 
+    private static GeneratedFile Characters(CharacterModel model) =>
+        TwoStageTable(
+            "CharacterData",
+            "The character properties the glyph rules of T-07 test, in a two-stage table.",
+            CharacterModel.SourceFiles,
+            "byte",
+            codePoint => (model.IsControl(codePoint) ? 1 : 0)
+                | (model.IsSpaceSeparator(codePoint) ? 1 << 1 : 0)
+                | (model.IsDefaultIgnorable(codePoint) ? 1 << 2 : 0),
+            "An entry holds general category Cc in bit 0, general category Zs in bit 1, and Default_Ignorable_Code_Point in bit 2.");
+
     /// <summary>
-    /// A table of one ushort entry per code point. The entries are cut into blocks of 2^BlockShift code points, and
+    /// A table of one byte or ushort entry per code point. The entries are cut into blocks of 2^BlockShift code points, and
     /// each distinct block is stored once; a byte index gives each block of code points its stored block.
     /// </summary>
     private static GeneratedFile TwoStageTable(
-        string className, string summary, IReadOnlyList<string> sourceFiles, Func<int, int> entry, string entryDescription)
+        string className, string summary, IReadOnlyList<string> sourceFiles, string entryType, Func<int, int> entry, string entryDescription)
     {
         var blockSize = 1 << BlockShift;
         var blockIndex = new List<int>();
@@ -56,7 +69,7 @@ internal static class UnicodeTableGenerator
             for (var i = 0; i < blockSize; i++)
             {
                 block[i] = entry(start + i);
-                Check(block[i] is >= 0 and <= ushort.MaxValue, $"{className}'s entries don't fit ushort.");
+                Check(block[i] >= 0 && block[i] <= (entryType == "byte" ? byte.MaxValue : ushort.MaxValue), $"{className}'s entries don't fit {entryType}.");
             }
 
             var key = string.Join(",", block);
@@ -79,7 +92,7 @@ internal static class UnicodeTableGenerator
             "byte",
             blockIndex,
             "The number of each block of code points, in code point order: entry i covers code points i << BlockShift onward.");
-        writer.Array("Blocks", "ushort", blocks, "The distinct blocks. " + entryDescription);
+        writer.Array("Blocks", entryType, blocks, "The distinct blocks. " + entryDescription);
         return writer.ToFile();
     }
 
