@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using System.Text;
+using Maviray.Pdf.Fonts;
+using Maviray.Pdf.Tests.Fonts;
 using Maviray.Pdf.Tests.Writer;
 using Maviray.Pdf.Writer;
 using Xunit.Sdk;
@@ -19,6 +21,32 @@ public sealed class ValidatorSelfTests
         var path = GeneratedFiles.SaveAs(new byte[100], ".ttf");
 
         Assert.ThrowsAny<XunitException>(() => FontTools.Dump(path));
+    }
+
+    [Fact]
+    public void FontToolsRejectsASubsetWithTheWrongGlyphs()
+    {
+        FontTools.Python();
+        var font = new TestFontBuilder().Build();
+        var original = GeneratedFiles.SaveAs(font, "-original.ttf");
+        var subset = GeneratedFiles.SaveAs(FontSubsetter.Build(TrueTypeFont.Load(font), [0, 2, 3]).Data.ToArray(), "-subset.ttf");
+
+        Assert.ThrowsAny<XunitException>(() => FontTools.CheckSubset(original, subset, [0, 3, 2]));
+    }
+
+    [Fact]
+    public void FontToolsRejectsASubsetWithABadChecksum()
+    {
+        FontTools.Python();
+        var font = new TestFontBuilder().Build();
+        var bytes = FontSubsetter.Build(TrueTypeFont.Load(font), [0, 2, 3]).Data.ToArray();
+        // The stored checksum of 'glyf', not its data: only checksum checking can notice this file is wrong.
+        var record = 12 + (16 * new TestFontFile(bytes).Tags.ToList().IndexOf("glyf"));
+        bytes[record + 4] ^= 0xFF;
+        var original = GeneratedFiles.SaveAs(font, "-original.ttf");
+        var subset = GeneratedFiles.SaveAs(bytes, "-subset.ttf");
+
+        Assert.ThrowsAny<XunitException>(() => FontTools.CheckSubset(original, subset, [0, 2, 3]));
     }
 
     [Fact]

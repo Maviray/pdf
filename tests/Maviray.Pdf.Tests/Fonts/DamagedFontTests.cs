@@ -4,10 +4,11 @@ using Maviray.Pdf.Fonts;
 namespace Maviray.Pdf.Tests.Fonts;
 
 /// <summary>
-/// Fonts are untrusted input (spec F-02): whatever the bytes, loading and every lookup either work or throw
-/// <see cref="InvalidDataException"/> or <see cref="NotSupportedException"/>, and a font that loads keeps its
-/// mapping contract. These tests damage two small built fonts, one per <c>cmap</c> format, in every way one truncation
-/// or one changed byte can, which is cheap and deterministic; fuzzing follows in P2.
+/// Fonts are untrusted input (spec F-02): whatever the bytes, loading, every lookup and building a subset either work
+/// or throw <see cref="InvalidDataException"/> or <see cref="NotSupportedException"/>, a font that loads keeps its
+/// mapping contract, and a subset that builds is a readable file. These tests damage two small built fonts, one per
+/// <c>cmap</c> format, in every way one truncation or one changed byte can, which is cheap and deterministic; fuzzing
+/// follows in P2.
 /// </summary>
 public sealed class DamagedFontTests
 {
@@ -19,6 +20,7 @@ public sealed class DamagedFontTests
         .CmapFormat12()
         .Map(0x1F600, 4)
         .CompositeGlyph(700, new TestComponent(2, 0x00C9), new TestComponent(3, 0x0040), new TestComponent(1, 0x0180))
+        .CompositeGlyph(800, new TestComponent(4, 0x0002), new TestComponent(2, 0x0002))
         .Build();
 
     public static TheoryData<string> Fonts => new() { "format 4", "format 12" };
@@ -86,10 +88,11 @@ public sealed class DamagedFontTests
     }
 
     /// <summary>
-    /// Every lookup on a loaded font. A glyph whose data is damaged may throw <see cref="InvalidDataException"/>; that is
-    /// caught per glyph, so it can't hide a later escape. The mappings must be strictly ascending, never glyph 0 or a
-    /// glyph past the font, and agree with <see cref="TrueTypeFont.GetGlyphId"/>; a broken promise throws
-    /// <see cref="InvalidOperationException"/>, which the sweep reports.
+    /// Every lookup on a loaded font, then a subset of all its glyphs. A glyph whose data is damaged may throw
+    /// <see cref="InvalidDataException"/>; that is caught per glyph, and once for the subset, so it can't hide a later
+    /// escape. The mappings must be strictly ascending, never glyph 0 or a glyph past the font, and agree with
+    /// <see cref="TrueTypeFont.GetGlyphId"/>. A subset that builds must be readable and hold every glyph. A broken
+    /// promise throws <see cref="InvalidOperationException"/>, which the sweep reports.
     /// </summary>
     private static void Exercise(TrueTypeFont font)
     {
@@ -123,6 +126,32 @@ public sealed class DamagedFontTests
             {
                 // documented for a damaged glyph; the next glyph is still checked
             }
+        }
+
+        if (font.Embedding == FontEmbedding.Subset)
+        {
+            ExerciseSubset(font);
+        }
+    }
+
+    private static void ExerciseSubset(TrueTypeFont font)
+    {
+        FontSubset subset;
+        try
+        {
+            subset = FontSubsetter.Build(font, [.. Enumerable.Range(0, font.GlyphCount).Select(g => (ushort)g)]);
+        }
+        catch (InvalidDataException)
+        {
+            return; // documented for a damaged glyph the subset reaches
+        }
+
+        var bytes = subset.Data.ToArray();
+        var directory = TableDirectory.Read(bytes);
+        var glyphs = BinaryPrimitives.ReadUInt16BigEndian(directory.GetTable(bytes, "maxp")[4..]);
+        if (glyphs != font.GlyphCount)
+        {
+            throw new InvalidOperationException($"a subset of all {font.GlyphCount} glyphs holds {glyphs}");
         }
     }
 

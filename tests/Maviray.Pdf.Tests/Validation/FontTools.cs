@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
 
 namespace Maviray.Pdf.Tests.Validation;
 
@@ -28,6 +31,20 @@ internal static class FontTools
 
     /// <summary>What fontTools reads from <paramref name="fontPath"/>. The test fails if fontTools can't read it.</summary>
     public static FontDump Dump(string fontPath) => FontDump.Parse(Run("dump", fontPath).StandardOutput);
+
+    /// <summary>
+    /// Compares every glyph of the subset at <paramref name="subsetPath"/> with its original glyph in
+    /// <paramref name="originalPath"/>: outline, components, instructions and metrics. The test fails on any difference,
+    /// or if fontTools can't read the subset with checksum errors raised.
+    /// </summary>
+    /// <returns>The number of glyphs fontTools compared.</returns>
+    public static int CheckSubset(string originalPath, string subsetPath, IReadOnlyList<ushort> originalGlyphIds)
+    {
+        var ids = subsetPath + ".glyphs.txt";
+        File.WriteAllText(ids, string.Join(' ', originalGlyphIds.Select(g => g.ToString(CultureInfo.InvariantCulture))), Encoding.ASCII);
+        using var result = JsonDocument.Parse(Run("subset", originalPath, subsetPath, ids).StandardOutput);
+        return result.RootElement.GetProperty("glyphs").GetInt32();
+    }
 
     private static ToolResult Run(params string[] arguments)
     {

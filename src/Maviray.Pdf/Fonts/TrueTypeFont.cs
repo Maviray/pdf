@@ -155,6 +155,8 @@ internal sealed class TrueTypeFont
 
     public int GetAdvanceWidth(ushort glyphId) => _metrics.AdvanceOf(CheckGlyph(glyphId));
 
+    public int GetLeftSideBearing(ushort glyphId) => _metrics.LeftSideBearingOf(CheckGlyph(glyphId));
+
     /// <summary>The glyph's bytes in <c>glyf</c>; empty for a glyph with no outline, such as a space.</summary>
     public ReadOnlySpan<byte> GetGlyphData(ushort glyphId)
     {
