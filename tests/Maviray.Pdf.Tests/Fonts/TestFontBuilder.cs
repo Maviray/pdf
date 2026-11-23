@@ -95,6 +95,13 @@ internal sealed class TestFontBuilder
         return this;
     }
 
+    /// <summary>A glyph with exactly these bytes, for damaged or unusual data.</summary>
+    public TestFontBuilder RawGlyph(ushort advance, byte[] data)
+    {
+        _glyphs.Add((advance, data));
+        return this;
+    }
+
     public TestFontBuilder CompositeGlyph(ushort advance, params TestComponent[] components)
     {
         var bytes = new List<byte>();
