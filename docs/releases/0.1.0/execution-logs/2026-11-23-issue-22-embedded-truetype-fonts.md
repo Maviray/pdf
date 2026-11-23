@@ -26,3 +26,17 @@ The branch `feature/22-embedded-truetype-fonts` is stacked on `feature/21-truety
   - The first version of `Poppler.ListFonts` was written through a shell here-document, which turned its escape sequences into line breaks. It was rewritten with the file tools before any test ran, as the plan's constraint requires.
   - pdffonts and qpdf aren't installed locally, so three of the tests skip. The fourth, `ACharacterTheFontLacksStillCopiesOut`, ran against xpdf's pdftotext and passed: a character Noto Sans lacks copies out as itself.
   - Full suite: 496 tests, 470 passed and 26 skipped. The PR's CI run is where the pdffonts checks first run.
+- **First CI run** (PR #26, run 45113250209, at `8835827`): 496 of 496 tests succeeded, with 0 skipped. poppler's pdffonts reports the Noto Sans line's font as CID TrueType, embedded, subset and Unicode-mapped, and the whole font as not subset. pdftotext returns every line exactly.
+- **Whole-branch review** by a fresh reviewer, which was told not to download or install anything: merge with fixes, none of them critical.
+  - It recomputed the tags with Python and checked the scaled values by hand.
+  - Its probes confirmed that `Write` writes nothing when the subset is refused, and that the owner check in `SetFont` reserves nothing.
+  - All five Review Focus items held.
+  - **Fixed:** `Poppler.ListFonts` misread every flag of a font whose name is longer than pdffonts' 36-character column, because pdffonts pads names but never cuts them. Today's names are all short, but a "not subset" check could have passed without checking anything. The parse now moves the later columns by the overflow. `PdffontsParsingTests` reproduces poppler's exact row format; it was red, then green.
+  - **Fixed:** `Poppler.ListFonts` ignored stderr, where poppler reports problems in a font's dictionaries while still exiting with 0. It now fails on stderr, as `Render` does. Red, then green.
+  - Full suite: 501 tests, 475 passed and 26 skipped.
+  - **Deferred, minor:**
+    - subset tags can collide for two different fonts with the same name and the same glyphs;
+    - a damaged `H` glyph the document never drew makes `Close` fail, with a message that doesn't name the font;
+    - `Close` can write some fonts before a later one fails;
+    - some test pins are weaker than they could be;
+    - no end-to-end check of a character above U+FFFF.
