@@ -1,6 +1,6 @@
 # Maviray.Pdf — Fully Managed .NET PDF Generation Library
 
-**Design Document · Draft v0.4** · Nov 20, 2026 · Yan Doldonov
+**Design Document · Draft v0.5** · Nov 23, 2026 · Yan Doldonov
 
 ## Summary
 
@@ -15,7 +15,7 @@ Why fully managed:
 
 The trade-off is that we own the hard parts that Skia and HarfBuzz would otherwise provide: font subsetting, text shaping and line breaking. Scope control is therefore the main risk, and the roadmap is built around it.
 
-This is draft v0.4. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a revenue-gated licence, a public source repository, and net10.0 as the only target framework. Draft v0.3 settled the questions that were still open:
+This is draft v0.5. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a revenue-gated licence, a public source repository, and net10.0 as the only target framework. Draft v0.3 settled the questions that were still open:
 
 - the one document that defines v1;
 - API naming, the default unit and a default font;
@@ -23,6 +23,8 @@ This is draft v0.4. Draft v0.2 recorded four decisions: the name Maviray.Pdf, a 
 - that only the fluent API is public.
 
 Draft v0.4 takes in the [P1 fonts spec](../releases/0.1.0/specs/2026-11-20-p1-fonts-design.md): the PDF writer uses the font engine, a subset gets one glyph per glyph and character, and a subset keeps a fixed list of tables. It also moves Layers out of FR-06 to P2, where the element catalog already had it.
+
+Draft v0.5 takes in the [P1 text spec](../releases/0.1.0/specs/2026-11-23-p1-text-design.md). NFC normalization comes from the library's own implementation, because .NET's depends on ICU. Line metrics come from `OS/2` when the font asks for that, and a word too wide for its line breaks between grapheme clusters. The packages also carry the notice for the Unicode data.
 
 It is the input for the functional specification and, later, the implementation plan. Open questions records every answer, and the questions deferred to the phase that needs them.
 
@@ -295,14 +297,14 @@ Text is the largest engineering cost in a fully managed library, so v1 limits it
 
 **Pipeline**
 
-1. **Normalize.** Input strings are normalized to NFC and split into grapheme clusters (`StringInfo`, `Rune`), so a cluster is never broken.
+1. **Normalize.** Input strings are normalized to NFC by the library's own implementation of UAX #15, generated from the Unicode Character Database. .NET's `string.Normalize` isn't used, because it depends on ICU and changes nothing in invariant-globalization mode. The strings are then split into grapheme clusters with `StringInfo`, so a cluster is never broken.
 2. **Itemize.** Spans are cut into runs that share one style, one font (after fallback), one script and one direction.
 3. **Shape.** Each run maps code points to glyph IDs and advances.
     - v1: `cmap` lookup plus `hmtx` advances.
     - P3: pair kerning from GPOS (or the legacy `kern` table) and standard ligatures from GSUB.
     - P5: contextual shaping for Arabic and Hebrew behind the same `IShaper` interface.
-4. **Break lines.** Break opportunities follow Unicode UAX #14 (line breaking). v1 uses greedy filling; hyphenation (Liang patterns) arrives in P3. Optimal Knuth–Plass breaking is a later option.
-5. **Lay out lines.** Alignment, letter spacing, baseline and line height from `hhea`/`OS/2` metrics. Justification positions each word explicitly, because the PDF word-spacing operator (`Tw`) does not work with two-byte glyph encodings.
+4. **Break lines.** Break opportunities follow the default rules of Unicode UAX #14 (line breaking). v1 uses greedy filling, and breaks a word too wide for its line between grapheme clusters. Soft hyphens work from P1; hyphenation (Liang patterns) arrives in P3. Optimal Knuth–Plass breaking is a later option.
+5. **Lay out lines.** Alignment, letter spacing, baseline and line height. The metrics come from `OS/2`'s typographic values when the font sets `USE_TYPO_METRICS`, and from `hhea` otherwise. Letter spacing, and from P2 justification, position glyphs explicitly with `TJ`, because the PDF word-spacing operator (`Tw`) does not work with two-byte glyph encodings.
 6. **Page.** Lines are the unit of splitting across pages; widow and orphan control comes with P2.
 
 **Fonts**
@@ -451,6 +453,7 @@ Every layer is tested on its own, and every generated file is checked by tools w
 | Layout engine | Positions and sizes of every element | A recording canvas captures draw calls; assertions run without any PDF |
 | Whole documents | No unintended change in output | Deterministic mode plus snapshot tests (Verify) on the PDF bytes |
 | Rendering | Same look across viewers | Pages rasterized with pdftoppm and PDFium, compared to approved PNGs |
+| Text engine | NFC normalization and line-break opportunities | Unicode's `NormalizationTest.txt` and `LineBreakTest.txt`, every test, in both globalization modes |
 | Text extraction | ToUnicode correctness for German, Turkish, Cyrillic, Greek | `pdftotext` output compared to the source strings |
 | Conformance | PDF/A and PDF/UA rules | veraPDF in CI from P2 |
 | Untrusted input | Font and image parsers do not crash or hang | Fuzzing with SharpFuzz, then corpus regression |
@@ -468,6 +471,8 @@ Maviray.Pdf ships as one core NuGet package with no runtime dependencies. Option
 - `Maviray.Pdf.Fonts.System`: optional discovery of installed system fonts, for desktop and server only.
 - `Maviray.Pdf.Fonts.Default`: optional Noto Sans in regular, bold, italic and bold italic, under the SIL Open Font License, with the licence file in the package. A first document then works with zero setup. It arrives with P1.
 - Later: `Maviray.Pdf.Svg`, extra image decoders, and a previewer tool with hot reload.
+
+Every package carries `THIRD-PARTY-NOTICES.md`. It holds the Unicode License for the Unicode data that the text engine's tables are generated from.
 
 **Publishing.** CI publishes packages to GitHub Packages, in the Maviray organisation's feed, the same as Maviray's other libraries. nuget.org isn't used for now (see Open questions). A merge into `main` publishes a release; a repository admin can publish a pre-release from any branch. Versions follow Semantic Versioning, calculated from git history. [Versions and packages](../versions-and-packages.md) has the details.
 
@@ -563,5 +568,7 @@ P1 is the first release worth dogfooding. Release 0.1.0 carries P0 and P1 togeth
 - [ISO 32000-2:2020 (PDF 2.0) and ISO 14289 (PDF/UA)](https://pdfa.org/sponsored-standards): the core PDF and accessibility standards, free from the PDF Association.
 - [OpenType specification 1.9.1, font file structure](https://learn.microsoft.com/en-us/typography/opentype/spec/otff): table directory, checksums and the tables the parser and subsetter handle.
 - [UAX #14: Unicode Line Breaking Algorithm](https://www.unicode.org/reports/tr14/): break opportunities for the line breaker.
+- [UAX #15: Unicode Normalization Forms](https://www.unicode.org/reports/tr15/) and [UAX #29: Unicode Text Segmentation](https://www.unicode.org/reports/tr29/): NFC and grapheme clusters.
+- [Unicode Character Database 16.0.0](https://www.unicode.org/Public/16.0.0/ucd/): the data the text engine's tables are generated from.
 - [veraPDF](https://verapdf.org/home/): open-source validator for every PDF/A level and PDF/UA machine checks, used in CI from P2.
 - [QuestPDF Community License 3.0](https://www.questpdf.com/license/community.html): the licence terms behind the clean-room rule.
