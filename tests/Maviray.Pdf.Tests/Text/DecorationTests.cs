@@ -59,6 +59,19 @@ public sealed class DecorationTests
             line.Decorations);
     }
 
+    // A cluster that crosses spans belongs to its first code point's span, so its decoration follows that span.
+    [Fact]
+    public void AClusterAcrossSpansIsDecoratedByItsFirstSpan()
+    {
+        var mark = char.ConvertFromUtf32(0x0301) + "x";
+
+        var first = Fill(("e", LayoutTestFont.Style(letterSpacing: 1, underline: true)), (mark, LayoutTestFont.Style(letterSpacing: 3)));
+        Assert.Equal([new TextDecoration(DecorationKind.Underline, 0, 0, 5, 9, 0.5)], first.Decorations);
+
+        var second = Fill(("e", LayoutTestFont.Style(letterSpacing: 1)), (mark, LayoutTestFont.Style(letterSpacing: 3, underline: true)));
+        Assert.Equal([new TextDecoration(DecorationKind.Underline, 1, 6, 5, 9, 0.5)], second.Decorations);
+    }
+
     // The values the spec quotes (T-11): at 10 pt the underline spans 1 to 1.5 pt below the baseline, and the
     // strikethrough 3.22 to 2.72 pt above it. Noto Sans's baseline is 10.69 pt below the line's top.
     [Fact]

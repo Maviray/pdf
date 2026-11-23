@@ -46,6 +46,28 @@ public sealed class PreparedParagraphTests
         Assert.Empty(prepared.Missing);
     }
 
+    // An invisible character draws nothing even when the font maps it: Noto Sans maps U+2060 to a 6 pt gap, and
+    // U+034F, U+200E and U+200F to glyphs with contours.
+    [Theory]
+    [InlineData(0x2060)]
+    [InlineData(0x034F)]
+    [InlineData(0x200E)]
+    [InlineData(0x200F)]
+    [InlineData(0x200B)]
+    [InlineData(0xFEFF)]
+    public void DefaultIgnorablesDrawNothingEvenWhenTheFontMapsThem(int codePoint)
+    {
+        var noto = PreparedParagraph.Prepare(new Paragraph([
+            new TextSpan("a" + char.ConvertFromUtf32(codePoint), new TextStyle(Fonts.TestFonts.NotoSans("Regular"), 10)),
+        ]));
+        var mapped = PreparedParagraph.Prepare(new Paragraph([
+            new TextSpan("a" + char.ConvertFromUtf32(codePoint), LayoutTestFont.Style(font: LayoutTestFont.Create(b => b.Map(codePoint, LayoutTestFont.Letter)))),
+        ]));
+
+        Assert.Empty(noto.GlyphsAt(1));
+        Assert.Empty(mapped.GlyphsAt(1));
+    }
+
     [Fact]
     public void AnUnmappedCodePointDrawsItsDecomposition()
     {

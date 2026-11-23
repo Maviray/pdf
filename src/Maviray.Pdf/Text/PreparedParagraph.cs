@@ -39,6 +39,7 @@ internal sealed class PreparedParagraph
     private readonly double[] _prefixWidth;
     private readonly int[] _lastDrawnBefore;
     private readonly int[] _contentEnd;
+    private readonly double[] _negativeAfter;
 
     // Per span.
     private readonly PreparedGlyph?[] _spanHyphens;
@@ -67,6 +68,7 @@ internal sealed class PreparedParagraph
         _prefixWidth = arrays.PrefixWidth;
         _lastDrawnBefore = arrays.LastDrawnBefore;
         _contentEnd = arrays.ContentEnd;
+        _negativeAfter = arrays.NegativeAfter;
         _spanHyphens = arrays.SpanHyphens;
         _spanAbove = arrays.SpanAbove;
         _spanBelow = arrays.SpanBelow;
@@ -157,8 +159,8 @@ internal sealed class PreparedParagraph
         var widest = 0.0;
         for (var start = 0; start < ClusterCount;)
         {
-            var (end, lineWidth) = FitLine(start, width + FitTolerance);
-            var line = BuildLine(start, end, lineWidth, width, top);
+            var (end, lineWidth, cut) = FitLine(start, width + FitTolerance);
+            var line = BuildLine(start, end, lineWidth, width, top, cut);
             lines.Add(line);
             top += line.Height;
             widest = Math.Max(widest, lineWidth);
@@ -173,21 +175,20 @@ internal sealed class PreparedParagraph
         codePoint is 0x000A or 0x000B or 0x000C or 0x000D or 0x0085 or 0x2028 or 0x2029;
 
     /// <summary>
-    /// The clusters <c>[start, end)</c> of the next line, and its width. A segment, from one break opportunity to the
-    /// next, joins the line when the line, ended right after it, fits (T-09).
+    /// The clusters <c>[start, end)</c> of the next line, its width, and whether it is a cut. The line ends after the
+    /// last segment, up to the next required break, with which it fits as it would be drawn (T-09): with the hyphen
+    /// where it ends at a soft hyphen after drawn text. The scan stops once no later end can fit: the line's plain
+    /// width plus the most that later clusters could narrow it is past the limit. Without negative letter spacing that
+    /// bound is the plain width itself, so the scan stops at the first segment that doesn't fit.
     /// </summary>
-    private (int End, double Width) FitLine(int start, double limit)
+    private (int End, double Width, bool Cut) FitLine(int start, double limit)
     {
-        // Segments join while the line fits without a hyphen; the line then ends after the last of them with which
-        // it fits as it would be drawn, with the hyphen where it ends at a soft hyphen. Testing every segment with
-        // its hyphen would break a line early whenever what follows a soft hyphen is narrower than the hyphen, and
-        // filling again at the measured width would then give other lines (T-09's round trip).
         var end = start;
         var width = 0.0;
         for (var k = start; ;)
         {
             var next = _nextBreak[k];
-            if (PlainWidth(start, next) > limit)
+            if (LowestWidthFrom(start, next) > limit)
             {
                 break;
             }
@@ -206,21 +207,42 @@ internal sealed class PreparedParagraph
             k = next;
         }
 
-        return end == start ? Cut(start, _nextBreak[start], limit) : (end, width);
+        return end == start ? Cut(start, _nextBreak[start], limit) : (end, width, false);
     }
 
     /// <summary>
-    /// A segment too wide for an empty line is cut between clusters: the line takes the most clusters that fit, and
-    /// at least one, which may then overflow (T-09). The scan stops at the first cluster that doesn't fit, so a cut
-    /// costs time in proportion to its own line, and a long word at a tiny width stays linear.
+    /// A lower bound on the width of any line of clusters <c>[start, e)</c> with <c>e</c> at or after
+    /// <paramref name="end"/>: its plain width now, plus every negative contribution still possible after its last
+    /// drawn cluster, that cluster's own letter spacing among them.
     /// </summary>
-    private (int End, double Width) Cut(int start, int segmentEnd, double limit)
+    private double LowestWidthFrom(int start, int end)
     {
+        var plain = PlainWidth(start, end);
+        var lastDrawn = _lastDrawnBefore[Math.Max(start, _contentEnd[end])];
+        return lastDrawn >= start
+            ? plain + Math.Min(0, _clusterSpacing[lastDrawn]) + _negativeAfter[lastDrawn + 1]
+            : plain + _negativeAfter[start];
+    }
+
+    /// <summary>
+    /// When no segment end fits, the first segment is cut between clusters (T-09): the whole segment when it fits
+    /// without its hyphen, which a cut doesn't draw, and otherwise the most clusters that fit, at least one, which may
+    /// then overflow. The scan stops at the first prefix that doesn't fit, so a cut costs time in proportion to its own
+    /// line, and a long word at a tiny width stays linear.
+    /// </summary>
+    private (int End, double Width, bool Cut) Cut(int start, int segmentEnd, double limit)
+    {
+        var whole = PlainWidth(start, segmentEnd);
+        if (whole <= limit)
+        {
+            return (segmentEnd, whole, true);
+        }
+
         var end = start + 1;
-        var width = LineWidth(start, end);
+        var width = PlainWidth(start, end);
         for (var x = start + 2; x < segmentEnd; x++)
         {
-            var candidate = LineWidth(start, x);
+            var candidate = PlainWidth(start, x);
             if (candidate > limit)
             {
                 break;
@@ -229,7 +251,7 @@ internal sealed class PreparedParagraph
             (end, width) = (x, candidate);
         }
 
-        return (end, width);
+        return (end, width, true);
     }
 
     /// <summary>
@@ -256,13 +278,16 @@ internal sealed class PreparedParagraph
         return _prefixWidth[contentEnd] - _prefixWidth[start] - spacing;
     }
 
-    /// <summary>Whether a line of clusters <c>[start, end)</c> ends right after a soft hyphen, with text after it.</summary>
+    /// <summary>
+    /// Whether a line of clusters <c>[start, end)</c> ends right after a soft hyphen that follows drawn text, with text
+    /// after it: the case where the soft hyphen draws a hyphen (T-07).
+    /// </summary>
     private bool EndsAtSoftHyphen(int start, int end) =>
-        end > start && end < ClusterCount && _clusterKinds[end - 1] == ClusterKind.SoftHyphen;
+        end > start && end < ClusterCount && _clusterKinds[end - 1] == ClusterKind.SoftHyphen && _lastDrawnBefore[end - 1] >= start;
 
     private int SpanOfCluster(int cluster) => _codePointSpans[_clusterFirst[cluster]];
 
-    private TextLine BuildLine(int start, int end, double width, double available, double top)
+    private TextLine BuildLine(int start, int end, double width, double available, double top, bool cut)
     {
         var firstCodePoint = _clusterFirst[start];
         var endCodePoint = _clusterFirst[end];
@@ -270,8 +295,9 @@ internal sealed class PreparedParagraph
         var lineEnd = _codePointStarts[endCodePoint];
 
         // T-08: every span with a code point on the line counts, hanging spaces and the break character included.
-        var above = 0.0;
-        var below = 0.0;
+        // Every line has one, and either extent may be negative when the leading is.
+        var above = double.NegativeInfinity;
+        var below = double.NegativeInfinity;
         var spanStarts = SpanStarts;
         for (var s = _codePointSpans[firstCodePoint]; s <= _codePointSpans[endCodePoint - 1]; s++)
         {
@@ -290,7 +316,7 @@ internal sealed class PreparedParagraph
                 TextAlignment.Right => available - width,
                 _ => 0,
             };
-        var (runs, decorations) = Place(start, end, offset, above);
+        var (runs, decorations) = Place(start, end, offset, above, cut);
         return new TextLine(lineStart, lineEnd - lineStart, width, offset, top, above + below, above, runs, decorations);
     }
 
@@ -301,10 +327,10 @@ internal sealed class PreparedParagraph
     /// cluster. A decoration covers each run of consecutive clusters of one decorated span, from the first one's
     /// start to the end of the last one's advance.
     /// </summary>
-    private (List<GlyphRun> Runs, List<TextDecoration> Decorations) Place(int start, int end, double offset, double baseline)
+    private (List<GlyphRun> Runs, List<TextDecoration> Decorations) Place(int start, int end, double offset, double baseline, bool cut)
     {
         var contentEnd = Math.Max(start, _contentEnd[end]);
-        var hyphen = EndsAtSoftHyphen(start, end) ? _spanHyphens[SpanOfCluster(end - 1)] : null;
+        var hyphen = !cut && EndsAtSoftHyphen(start, end) ? _spanHyphens[SpanOfCluster(end - 1)] : null;
         var lastDrawn = hyphen is null ? _lastDrawnBefore[contentEnd] : -1;
 
         var runs = new List<GlyphRun>();
@@ -511,6 +537,19 @@ internal sealed class PreparedParagraph
             contentEnd[k + 1] = kinds[k] is ClusterKind.Break or ClusterKind.HangingSpace ? contentEnd[k] : k + 1;
         }
 
+        // How much the clusters from each one on could narrow a line at most: their negative contributions, and
+        // the most negative letter spacing among them, which a line's last drawn cluster gives back.
+        var negativeAfter = new double[count + 1];
+        var lowestSpacing = 0.0;
+        var negativeSum = 0.0;
+        for (var k = count - 1; k >= 0; k--)
+        {
+            var contribution = prefix[k + 1] - prefix[k];
+            negativeSum += Math.Min(0, contribution);
+            lowestSpacing = Math.Min(lowestSpacing, spacing[k]);
+            negativeAfter[k] = negativeSum + lowestSpacing;
+        }
+
         breakBefore[count] = LineBreakKind.Required;
         var nextBreak = new int[count + 1];
         nextBreak[count] = count;
@@ -527,6 +566,7 @@ internal sealed class PreparedParagraph
         arrays.PrefixWidth = prefix;
         arrays.LastDrawnBefore = lastDrawn;
         arrays.ContentEnd = contentEnd;
+        arrays.NegativeAfter = negativeAfter;
     }
 
     /// <summary>
@@ -583,15 +623,17 @@ internal sealed class PreparedParagraph
             return false;
         }
 
+        // Invisible characters draw nothing even when the font maps them: Noto Sans maps U+2060 to a wide empty glyph,
+        // and U+034F, U+200E and U+200F to glyphs with outlines.
+        if (CharacterProperties.IsDefaultIgnorable(codePoint) || CharacterProperties.IsControl(codePoint))
+        {
+            return false;
+        }
+
         var glyph = font.GetGlyphId(codePoint);
         if (glyph != 0)
         {
             glyphs.Add(Glyph(font, style.Size, glyph, codePoint));
-            return false;
-        }
-
-        if (CharacterProperties.IsDefaultIgnorable(codePoint) || CharacterProperties.IsControl(codePoint))
-        {
             return false;
         }
 
@@ -670,6 +712,8 @@ internal sealed class PreparedParagraph
         public int[] LastDrawnBefore { get; set; } = [];
 
         public int[] ContentEnd { get; set; } = [];
+
+        public double[] NegativeAfter { get; set; } = [];
 
         public PreparedGlyph?[] SpanHyphens { get; set; } = [];
 

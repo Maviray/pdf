@@ -70,6 +70,58 @@ public sealed class FillTests
         AssertLines(prepared.Fill(natural.Width), ("aaa" + SoftHyphen + char.ConvertFromUtf32(0x00A0), 17.5));
     }
 
+    // "aaa" and the soft hyphen fit without the hyphen (15 pt), but not with it (18.2), and nothing after them fits:
+    // the cut takes the whole segment and draws no hyphen, so no line holds only a hyphen.
+    [Fact]
+    public void ACutDrawsNoHyphen()
+    {
+        var layout = Fill("aaa" + SoftHyphen + "bbbb", 16);
+
+        AssertLines(layout, ("aaa" + SoftHyphen, 15), ("bbb", 15), ("b", 5));
+        Assert.DoesNotContain(layout.Lines.SelectMany(l => l.Runs).SelectMany(r => r.Glyphs), g => g.CodePoint == 0x00AD);
+    }
+
+    [Fact]
+    public void ACutDrawsNoHyphenInNotoSans()
+    {
+        var style = new TextStyle(Fonts.TestFonts.NotoSans("Regular"), 10);
+        var layout = Fill("Kunden" + SoftHyphen + "nummer", 38, style);
+
+        Assert.Equal("Kunden" + SoftHyphen, layout.Source.Text.Substring(layout.Lines[0].Start, layout.Lines[0].Length));
+        Assert.DoesNotContain(layout.Lines.SelectMany(l => l.Runs).SelectMany(r => r.Glyphs), g => g.CodePoint == 0x00AD);
+    }
+
+    // A soft hyphen with nothing drawn before it on its line draws no hyphen.
+    [Fact]
+    public void ALeadingSoftHyphenDrawsNoHyphen()
+    {
+        var layout = Fill(SoftHyphen + "bbb", 10);
+
+        Assert.DoesNotContain(layout.Lines.SelectMany(l => l.Runs).SelectMany(r => r.Glyphs), g => g.CodePoint == 0x00AD);
+    }
+
+    // T-08: the leading may be negative, and so may the extent below the baseline.
+    [Fact]
+    public void NegativeLeadingShrinksTheLine()
+    {
+        var line = Fill("a", 100, LayoutTestFont.Style(lineHeight: 0.5)).Lines[0];
+
+        Assert.Equal(5.5, line.Baseline, 9);
+        Assert.Equal(5, line.Height, 9);
+    }
+
+    // With negative letter spacing, a zero-advance cluster narrows the line: "ab", a zero-width space and a lone mark
+    // are 9 pt in all, but 9.5 pt up to the zero-width space. Filled again at 9 pt, it must stay one line.
+    [Fact]
+    public void ALineThatNarrowsAsItGrowsKeepsItsLine()
+    {
+        var prepared = Prepare("ab" + char.ConvertFromUtf32(0x200B) + char.ConvertFromUtf32(0x0301), LayoutTestFont.Style(letterSpacing: -0.5));
+        var natural = prepared.Fill(double.PositiveInfinity);
+
+        Assert.Single(natural.Lines);
+        Assert.Single(prepared.Fill(natural.Width).Lines);
+    }
+
     [Fact]
     public void ASoftHyphenElsewhereAddsNothing()
     {

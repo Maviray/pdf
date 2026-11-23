@@ -10,11 +10,14 @@ public sealed class RoundTripTests(ITestOutputHelper output)
 {
     private const int Paragraphs = 2000;
 
-    // Letters, W, spaces, a tab, U+00A0, U+00AD, '-', U+2010, U+0301 and a line feed, by code point.
+    // Half the spans use a font without U+2010, so a soft hyphen draws U+002D.
+    private static readonly Lazy<Maviray.Pdf.Fonts.TrueTypeFont> WithoutHyphen = new(() => LayoutTestFont.Create(mapHyphen: false));
+
+    // Letters, W, '.', ',', spaces, a tab, U+00A0, U+00AD, '-', U+2010, U+0301, U+200B, CR, LF and U+2028, by code point.
     private static readonly int[] Alphabet =
     [
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'W',
-        ' ', ' ', ' ', ' ', 0x0009, 0x00A0, 0x00AD, '-', 0x2010, 0x0301, '\n',
+        '.', ',', ' ', ' ', ' ', ' ', 0x0009, 0x00A0, 0x00AD, '-', 0x2010, 0x0301, 0x200B, '\r', '\n', 0x2028,
     ];
 
     [Fact]
@@ -75,7 +78,8 @@ public sealed class RoundTripTests(ITestOutputHelper output)
                 lineHeight: random.Next(3) == 0 ? 0.8 + random.NextDouble() : null,
                 letterSpacing: -0.5 + (random.NextDouble() * 2.5),
                 underline: random.Next(3) == 0,
-                strikethrough: random.Next(4) == 0);
+                strikethrough: random.Next(4) == 0,
+                font: random.Next(2) == 0 ? LayoutTestFont.Font : WithoutHyphen.Value);
             spans.Add(new TextSpan(text.ToString(), style));
         }
 
