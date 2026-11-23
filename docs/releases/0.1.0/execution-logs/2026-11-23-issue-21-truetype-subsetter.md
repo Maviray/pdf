@@ -35,3 +35,15 @@ The branch `feature/21-truetype-subsetter` is stacked on `feature/20-truetype-pa
   - Two self-tests prove the check can fail: wrong glyphs, and a bad checksum.
   - Locally the 11 tests skip with the install message. The PR's CI run is where they first run.
   - Full suite: 435 tests, 412 passed and 23 skipped.
+- **First CI run** (PR #25, run 45109860318, at `2a1e855`): 435 of 435 tests succeeded, with 0 skipped. CI's fontTools is 4.61.1. It accepted every subset: the gate text and every glyph reversed, in all four Noto Sans styles, and the nested built font. It rejected both damaged subsets in the self-tests.
+- **Whole-branch review** by a fresh reviewer: merge with fixes, all of them in the tests. It found no bug in `src/`.
+  - Its own probes found nothing that escapes. It installed fontTools 4.61.1 outside the repository for them, and probed the closure's depth and limit edges and the damage the subset reaches. fontTools also accepted reversed subsets it built itself.
+  - **Fixed:** the 65,535-glyph limit had two untested edges: reaching it exactly through appended components, and listing more than 65,535 glyphs. Both tests are in place, red against two mutants (an append check one too strict, and the count check removed), then green.
+  - **Fixed:** the bad-checksum self-test changed a byte that also broke the glyph's decoding, so it would pass even without checksum checking. It now changes only the stored checksum of `glyf`. Its red step needs fontTools, so the evidence is the reviewer's run with checking off, which accepted such a file, and CI's run with it on.
+  - Full suite: 436 tests, 413 passed and 23 skipped.
+  - **Deferred, minor:**
+    - damage messages name the table, not the glyph;
+    - the first-index rewrite for a glyph listed twice isn't pinned by a test;
+    - a truncated composite record is covered only by the sweep;
+    - the sweep subsets only the identity list;
+    - `Build` checks the embedding permission before its list argument.

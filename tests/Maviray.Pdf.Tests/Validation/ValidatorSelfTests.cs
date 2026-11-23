@@ -40,7 +40,9 @@ public sealed class ValidatorSelfTests
         FontTools.Python();
         var font = new TestFontBuilder().Build();
         var bytes = FontSubsetter.Build(TrueTypeFont.Load(font), [0, 2, 3]).Data.ToArray();
-        bytes[new TestFontFile(bytes).OffsetOf("glyf") + 12] ^= 0xFF;
+        // The stored checksum of 'glyf', not its data: only checksum checking can notice this file is wrong.
+        var record = 12 + (16 * new TestFontFile(bytes).Tags.ToList().IndexOf("glyf"));
+        bytes[record + 4] ^= 0xFF;
         var original = GeneratedFiles.SaveAs(font, "-original.ttf");
         var subset = GeneratedFiles.SaveAs(bytes, "-subset.ttf");
 

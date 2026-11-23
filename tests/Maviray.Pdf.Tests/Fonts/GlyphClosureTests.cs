@@ -111,13 +111,18 @@ public sealed class GlyphClosureTests
     public void MoreThan65535GlyphsAreRefused()
     {
         var font = Load(new TestFontBuilder().CompositeGlyph(700, C(2, 3)));
-        ushort[] tooMany = [0, .. Enumerable.Repeat((ushort)4, 65_534)];
-        ushort[] justEnough = [0, 2, 3, .. Enumerable.Repeat((ushort)4, 65_532)];
+        ushort[] listedToTheLimit = [0, 2, 3, .. Enumerable.Repeat((ushort)4, 65_532)];
+        ushort[] appendedToTheLimit = [0, .. Enumerable.Repeat((ushort)4, 65_532)]; // 2 and 3 appended make 65,535
+        ushort[] appendedPastIt = [0, .. Enumerable.Repeat((ushort)4, 65_533)]; // 65,536 once 2 and 3 are appended
+        ushort[] listedPastIt = [0, .. Enumerable.Repeat((ushort)2, 65_535)]; // 65,536 simple glyphs
 
-        var error = Assert.Throws<InvalidOperationException>(() => GlyphClosure.Resolve(font, tooMany));
-
-        Assert.Contains("65,535", error.Message, StringComparison.Ordinal);
-        Assert.Equal(65_535, GlyphClosure.Resolve(font, justEnough).Length);
+        Assert.Equal(65_535, GlyphClosure.Resolve(font, listedToTheLimit).Length);
+        Assert.Equal(65_535, GlyphClosure.Resolve(font, appendedToTheLimit).Length);
+        foreach (var glyphs in new[] { appendedPastIt, listedPastIt })
+        {
+            var error = Assert.Throws<InvalidOperationException>(() => GlyphClosure.Resolve(font, glyphs));
+            Assert.Contains("65,535", error.Message, StringComparison.Ordinal);
+        }
     }
 
     // Read with a throwaway script while planning: "Ä" (134) is "A" (36) and a mark (106) in every style, both simple.

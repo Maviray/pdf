@@ -188,6 +188,18 @@ public sealed class FontSubsetterTests
             FontSubsetter.Build(TrueTypeFont.Load(noto), [0, 134, 3]).Data.ToArray());
     }
 
+    // 65,535 is the largest count numGlyphs and numberOfHMetrics can hold; one more would wrap them to 0.
+    [Fact]
+    public void ASubsetOf65535GlyphsCountsThemAll()
+    {
+        var font = Load(new TestFontBuilder().CompositeGlyph(700, C(2, 3)));
+
+        var file = Read(FontSubsetter.Build(font, [0, .. Enumerable.Repeat((ushort)4, 65_532)]));
+
+        Assert.Equal(65_535, file.GlyphCount);
+        Assert.Equal(65_535, file.NumberOfHMetrics);
+    }
+
     [Fact]
     public void RefusesAFontThatMayNotBeSubset()
     {
