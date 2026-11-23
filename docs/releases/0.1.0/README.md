@@ -18,7 +18,7 @@ Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Mav
 | [#22](https://github.com/Maviray/pdf/issues/22) P1.3 | Embedded TrueType fonts in the PDF | In review, 2026-11-23. Plan: [issue 22](plans/2026-11-23-issue-22-embedded-truetype-fonts.md). Log: [issue 22](execution-logs/2026-11-23-issue-22-embedded-truetype-fonts.md) |
 | [#23](https://github.com/Maviray/pdf/issues/23) P1.4 | Fonts gate | In review, 2026-11-23. Plan: [issue 23](plans/2026-11-23-issue-23-fonts-gate.md). Log: [issue 23](execution-logs/2026-11-23-issue-23-fonts-gate.md). Checklist: [viewer check](../../qa/checklists/viewer-check.md) |
 | P1 text spec | Design of P1 Text and its four work items | Draft, 2026-11-23, awaiting approval. Design: [P1 Text](specs/2026-11-23-p1-text-design.md) |
-| P1 layout spec | MVP layout: the element tree, the layout engine and the fluent API | Specified after the text spec |
+| P1 layout spec | Design of P1 Layout and fluent API and its six work items | Draft, 2026-11-23, awaiting approval. Design: [P1 Layout](specs/2026-11-23-p1-layout-design.md) |
 
 macOS Preview isn't checked in P0, because no Mac is available. The 0.1.0 release check covers it if a Mac is available by then, and otherwise records it as not checked.
 
