@@ -63,3 +63,5 @@ The branch `feature/30-unicode-data-nfc` starts from `develop` at `ca13853`, the
     - the conformance test could also check that every c2 and c4 field comes back as the same instance;
     - `FirstNonTrivial` (U+0300) and `MaxDecompositionLength` (4) are typed by hand, where the generator could check them;
     - `UcdFiles` and `TestFonts` keep their own upward search.
+- **Merged `develop`** after #29, the P1 Layout spec, and marked that spec approved. The release index conflicted where #29 updated the two spec rows and this branch adds the row for #30 between them; both are kept.
+- **First CI run** (PR #40, run 45201300248, at `f84a299`): 631 of 631 tests succeeded, with 0 skipped. The text tests without ICU passed 129 of 129.
