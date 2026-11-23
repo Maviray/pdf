@@ -121,6 +121,9 @@ internal sealed class TrueTypeFont
 
     public int UnderlineThickness { get; }
 
+    /// <summary>The font's own copy of its file, for embedding a font that may not be subset whole (F-11).</summary>
+    public ReadOnlyMemory<byte> FileData => _file;
+
     /// <exception cref="NotSupportedException">The font is one the library can't embed correctly.</exception>
     /// <exception cref="InvalidDataException">The font is damaged.</exception>
     public static TrueTypeFont Load(ReadOnlySpan<byte> file)
