@@ -1,6 +1,6 @@
 # Release 0.1.0: Foundations and MVP layout
 
-**Status:** in progress, updated 2026-11-20.
+**Status:** in progress, updated 2026-11-23.
 
 Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Maviray.Pdf-Design-Document.md). P0 has no public API, so 0.1.0 is the first release with one. Work items are GitHub issues in the milestone [v0.1.0](https://github.com/Maviray/pdf/milestone/1).
 
@@ -14,7 +14,7 @@ Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Mav
 | [#13](https://github.com/Maviray/pdf/issues/13) P0.5 | Hello-world gate and the first viewer check | Merged 2026-11-19 in [#18](https://github.com/Maviray/pdf/pull/18); the issue stays open until the viewer check by hand passes. Plan: [issue 13](plans/2026-11-19-issue-13-hello-world-gate.md). Log: [issue 13](execution-logs/2026-11-19-issue-13-hello-world-gate.md). Checklist: [viewer check](../../qa/checklists/viewer-check.md) |
 | P1 fonts spec | Design of P1 Fonts and its four work items | Approved, 2026-11-20. Design: [P1 Fonts](specs/2026-11-20-p1-fonts-design.md) |
 | [#20](https://github.com/Maviray/pdf/issues/20) P1.1 | TrueType parser | In review, 2026-11-20. Plan: [issue 20](plans/2026-11-20-issue-20-truetype-parser.md). Log: [issue 20](execution-logs/2026-11-20-issue-20-truetype-parser.md) |
-| [#21](https://github.com/Maviray/pdf/issues/21) P1.2 | TrueType subsetter | Planned |
+| [#21](https://github.com/Maviray/pdf/issues/21) P1.2 | TrueType subsetter | In review, 2026-11-23. Plan: [issue 21](plans/2026-11-23-issue-21-truetype-subsetter.md). Log: [issue 21](execution-logs/2026-11-23-issue-21-truetype-subsetter.md) |
 | [#22](https://github.com/Maviray/pdf/issues/22) P1.3 | Embedded TrueType fonts in the PDF | Planned |
 | [#23](https://github.com/Maviray/pdf/issues/23) P1.4 | Fonts gate | Planned |
 | P1 | MVP layout: text, then layout with the fluent API | Each specified after the work before it |
