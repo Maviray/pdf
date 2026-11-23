@@ -49,7 +49,8 @@ The page is A4 in portrait and white.
 
 - **What to look out for:**
   - No character shows as an empty box or a question mark.
-  - Every accent sits on its own letter: the dots of `İ` and `ı`'s missing dot, the breve of `ğ`, the cedilla of `Ş`, `Ə` and `ə`, the upturn of `Ґ`, the dots of `ї` and `ё`, and the Greek tonos.
+  - Every accent sits on its own letter: the dot of `İ`, `ı` with no dot, the breve of `ğ`, the cedilla of `Ş`, the upturn of `Ґ`, the two dots of `ї` and `ё`, and the Greek tonos.
+  - The schwa `Ə` and `ə` show as letters of their own, not as an `e` turned around or a box.
   - The italic blocks lean, and the bold blocks are heavier.
 
 ## Viewers
@@ -73,24 +74,26 @@ The page is A4 in portrait and white.
 
      The size is A4, 210 × 297 mm (8.27 × 11.69 in), portrait.
 3. **Text copies out exactly.**
-   - Select all the text on the page, copy it, then run this in PowerShell. It compares the clipboard with the two lines:
+   - Select all the text on the page, copy it, then run the file's snippet below in PowerShell. Both compare character by character (ordinal), so a lookalike or a decomposed accent, such as `o` followed by U+0308 instead of `ö`, counts as a difference. PowerShell's own `-ceq` and `Compare-Object` treat those as equal.
+   - For the hello-world file, the snippet holds the two lines:
 
      ```powershell
      $expected = 'Hello, world', "Gr$([char]0xFC)$([char]0xDF)e aus K$([char]0xF6)ln $([char]0x2013) 25 $([char]0x20AC)"
      $actual = @(Get-Clipboard | ForEach-Object TrimEnd | Where-Object { $_ })
-     if (($actual -join "`n") -ceq ($expected -join "`n")) { 'Exact' } else { $actual | ForEach-Object { ($_.ToCharArray() | ForEach-Object { 'U+{0:X4}' -f [int]$_ }) -join ' ' } }
+     if ([string]::Equals(($actual -join "`n"), ($expected -join "`n"), [StringComparison]::Ordinal)) { 'Exact' } else { $actual | ForEach-Object { ($_.ToCharArray() | ForEach-Object { 'U+{0:X4}' -f [int]$_ }) -join ' ' } }
      ```
 
-   - It prints `Exact` when the text matches. Otherwise it prints each copied line as character codes, so a hyphen (U+002D) instead of the en dash (U+2013), or a no-break space, shows up.
+     It prints `Exact` when the text matches. Otherwise it prints each copied line as character codes, so a hyphen (U+002D) instead of the en dash (U+2013), or a no-break space, shows up.
    - For the fonts file, the expected lines come from its `.txt` file, so no character needs typing. Put that file's path in the first line:
 
      ```powershell
      $expected = @(Get-Content -Encoding UTF8 '<path>\FontsGatePassesEveryValidator.txt')
      $actual = @(Get-Clipboard | ForEach-Object TrimEnd | Where-Object { $_ })
-     if (($actual -join "`n") -ceq ($expected -join "`n")) { 'Exact' } else { Compare-Object $expected $actual }
+     if ([string]::Equals(($actual -join "`n"), ($expected -join "`n"), [StringComparison]::Ordinal)) { 'Exact' }
+     else { 0..([Math]::Max($expected.Count, $actual.Count) - 1) | Where-Object { -not [string]::Equals($expected[$_], $actual[$_], [StringComparison]::Ordinal) } | ForEach-Object { "Line $($_ + 1): $($actual[$_])"; (([string]$actual[$_]).ToCharArray() | ForEach-Object { 'U+{0:X4}' -f [int]$_ }) -join ' ' } }
      ```
 
-     It prints `Exact` when all 24 lines match, in order. Otherwise it lists the lines that differ: `<=` for an expected line and `=>` for a copied one.
+     It prints `Exact` when all 24 lines match, in order. Otherwise, for each line that differs, it prints the line number, the copied line and its character codes. A missing line shows as an empty copied line.
    - Line breaks, blank lines and spaces at the end of a line don't count, because viewers paste them differently. Every character within each line must match.
 4. **Acrobat only: no repair.** Close the file. Acrobat must not ask whether to save changes, because asking means it repaired the file.
 

@@ -80,8 +80,8 @@ public sealed class FontsGateTests
         var empty = Enumerable.Range(0, Lines.Length).Where(i => !inked[i]).Select(i => $"{Lines[i].Style}: {Lines[i].Text}").ToList();
         Assert.True(empty.Count == 0, $"No ink in the box of {string.Join(" | ", empty)}.");
 
-        // 4. The text copies out exactly, read by poppler. xpdf 4's default reading order garbles this page, so the check
-        // comes after the render, which needs poppler. Blind spot: empty lines and line-end whitespace are dropped, as in the P0 gate.
+        // 4. The text copies out exactly, read by poppler. xpdf 4.00's default mode joins each block's lines into one
+        // line, so the check comes after the render, which needs poppler. Blind spot: empty lines and line-end whitespace are dropped, as in the P0 gate.
         var extracted = Poppler.ExtractText(path)
             .Split('\n')
             .Select(line => line.TrimEnd())
