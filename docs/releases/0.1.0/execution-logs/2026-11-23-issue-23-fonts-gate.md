@@ -31,3 +31,4 @@ The branch `feature/23-fonts-gate` is stacked on `feature/22-embedded-truetype-f
     - a Windows contributor's Git Bash xpdf can shadow poppler's pdftotext;
     - "ink in every box" is met by one dark pixel;
     - the pixel-centre formula is 0.11 points off.
+- **CI after the fixes** (run 45117038740, at `8f50044`): 502 of 502 tests succeeded, with 0 skipped.
