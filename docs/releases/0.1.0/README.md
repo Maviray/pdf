@@ -15,7 +15,7 @@ Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Mav
 | P1 fonts spec | Design of P1 Fonts and its four work items | Approved, 2026-11-20. Design: [P1 Fonts](specs/2026-11-20-p1-fonts-design.md) |
 | [#20](https://github.com/Maviray/pdf/issues/20) P1.1 | TrueType parser | In review, 2026-11-20. Plan: [issue 20](plans/2026-11-20-issue-20-truetype-parser.md). Log: [issue 20](execution-logs/2026-11-20-issue-20-truetype-parser.md) |
 | [#21](https://github.com/Maviray/pdf/issues/21) P1.2 | TrueType subsetter | In review, 2026-11-23. Plan: [issue 21](plans/2026-11-23-issue-21-truetype-subsetter.md). Log: [issue 21](execution-logs/2026-11-23-issue-21-truetype-subsetter.md) |
-| [#22](https://github.com/Maviray/pdf/issues/22) P1.3 | Embedded TrueType fonts in the PDF | Planned |
+| [#22](https://github.com/Maviray/pdf/issues/22) P1.3 | Embedded TrueType fonts in the PDF | In review, 2026-11-23. Plan: [issue 22](plans/2026-11-23-issue-22-embedded-truetype-fonts.md). Log: [issue 22](execution-logs/2026-11-23-issue-22-embedded-truetype-fonts.md) |
 | [#23](https://github.com/Maviray/pdf/issues/23) P1.4 | Fonts gate | Planned |
 | P1 | MVP layout: text, then layout with the fluent API | Each specified after the work before it |
 
