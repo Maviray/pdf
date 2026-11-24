@@ -1,0 +1,81 @@
+# P1.12 Fluent API: execution log
+
+Issue [#37](https://github.com/Maviray/pdf/issues/37). Plan: [2026-11-24-issue-37-fluent-api.md](../plans/2026-11-24-issue-37-fluent-api.md).
+
+The branch `feature/37-fluent-api` is stacked on `feature/36-text-element-styles-fonts` (PR #46), and so on #45 to #41.
+
+## 2026-11-24
+
+- **Planning.** The plan's rulings:
+  - a page set is A4 with no margins and no background unless set, and one without `Content()` has an empty Column;
+  - the text call gets no element-level style;
+  - `DefaultTextStyle(Func<TextStyle, TextStyle>)` receives an empty style, and what it returns sits over the inherited one;
+  - chained alignments merge, with the inner call winning on an axis both set;
+  - `Deterministic()` turns the mode on, and `Deterministic(false)` turns it off again;
+  - the API listing is `src/Maviray.Pdf/PublicApi.txt`, rewritten when `MAVIRAY_PDF_WRITE_PUBLIC_API=true`.
+- **Task 1, the writer's metadata:**
+  - the Info dictionary holds text strings, and `/Producer` is always `Maviray.Pdf` and the package version, from a constant the build writes;
+  - dates carry their offset, or `Z` for UTC;
+  - `/Lang` and `DisplayDocTitle` are written only when set;
+  - a hashed `/ID` is the first 16 bytes of the SHA-256 of every byte before the trailer, and it can't be combined with a given ID.
+- **Task 2, units, page sizes and the container calls:**
+  - every length has a `Unit` overload: 72 points to the inch, 25.4 mm to the inch;
+  - A3, A4, A5, Letter and Legal, and `Landscape()`;
+  - each call records a node, and the nodes build the elements once the compose callback is done;
+  - a container takes one child, and a foreign or null container throws;
+  - `Background` and the borders take `stretch`, true by default, as asked for in P1.10.
+  - **Ruling:** a Border with one side set drew three zero-size bands. It now skips a band with no width or height, which changes nothing visible.
+- **Task 3, the text builders:** `.Text(string)` returns its span builder, and `.Text(t => ...)` takes spans, the page number, the page count and the alignment. A span styled after its element was built throws.
+- **Task 4, documents, pages, settings and metadata:**
+  - each save runs the callback again;
+  - `Save(Stream)` leaves the stream open;
+  - `Save(path)` writes a temporary file beside the target and moves it into place;
+  - deterministic mode hashes the `/ID` and writes no creation date unless one is set;
+  - a language tag is checked for its BCP 47 syntax.
+  - **Ruling:** the plan named four test files, and every case is in `DocumentTests.cs`, through the public API only.
+  - **Mutants**, each failing the test meant for it:
+    - no deletion of the temporary file;
+    - a direct write to the target;
+    - a creation date in deterministic mode.
+- **Task 5, the public API listing:**
+  - every type is in `Maviray.Pdf`, and nothing below the fluent layer is public;
+  - every L-02 name is listed, and none of the names L-02 marks as QuestPDF's: `GeneratePdf`, `PageSizes`, `PageColor`, `ConstantItem`, `RelativeItem`, `AutoItem`, `LineHorizontal`, `LineVertical`, `CurrentPageNumber` and `TotalPages`.
+  - An edited line fails the test at its line number, with both versions shown.
+- **Task 6, the README example:** a one-page invoice in Noto Sans, as a method `SaveInvoice(fontFolder, path)`. The test holds the same lines, runs them, checks the file with qpdf, and fails at the first line where the README differs.
+  - **Ruling:** the example made other parts of the README wrong, so they are corrected:
+    - the status line said the package has no PDF features and P0 was next;
+    - the planned API used the names P1 replaced;
+    - the design document was called draft v0.2 twice; it is v0.6.
+- **Full suite:** Release, 1,124 tests, all passed, with every validator required.
+- **Whole-branch review** by a fresh reviewer: ready with fixes, with no critical finding.
+  - It probed in a worktree it removed afterwards.
+  - It confirmed the hashed `/ID` on a 400-line document, identical bytes from 16 parallel saves, and the single-use rules.
+  - **Fixed. Each test was seen failing first:**
+    - **A failed cleanup hid the save's error.** If the temporary file couldn't be deleted, for example because another program held it, the delete's exception replaced the `LayoutException`. The cleanup now ignores its own failure. `AFailedCleanupKeepsTheOriginalError` makes the temporary file read-only in the callback, which failed on the old code.
+    - **Two Review Focus rules had no test.** The reviewer's mutants survived the whole suite:
+      - `Deterministic()` setting a constant ID instead of the hash. `DeterministicModeHashesTheFileId` now recomputes the hash.
+      - `DisplayDocTitle` following the language instead of the title. `DisplayDocTitleFollowsTheTitleAlone` now writes each without the other.
+  - **Full suite:**
+    - Release: 1,127 of 1,127;
+    - Debug: 1,126 passed and 1 skipped.
+  - **Deferred minors:**
+    - builders captured and used after their save are ignored, except the text builders, which throw;
+    - `Size(default(PageSize))` names `width`, not `size`;
+    - a converted length that overflows to infinity isn't caught at the call;
+    - `Save(Stream)` doesn't check `CanWrite` at the call;
+    - an empty title is written, with `DisplayDocTitle`;
+    - a `Version` with build metadata would carry it into `/Producer`;
+    - some calls lack `<exception>` tags;
+    - 10 mm and 1 cm differ by one unit in the last place;
+    - a few test gaps where the code reads right;
+    - the API listing records no generic constraints or attributes, and there are none yet.
+  - **Rulings on what the reviewer set aside:**
+    - Flate output across platforms is checked by the P1.14 gate.
+    - Font sizes stay in points.
+    - Only directly chained alignments merge. A wrapper between two alignments leaves the inner one no room, because P1.10's Align reports its child's size.
+    - A second `DefaultTextStyle` replaces the first.
+    - A failed `Save(Stream)` leaves partial output in the caller's stream.
+    - The README's status line is updated by the release.
+    - Replacing a file loses its ACLs, attributes and hard links.
+    - Lone surrogates in metadata become U+FFFD.
+  - **Ruling:** Task 2 put the plan's two unit and page-size test files into one.
