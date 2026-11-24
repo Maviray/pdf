@@ -4,12 +4,11 @@ using Maviray.Pdf.Tests.Text;
 
 namespace Maviray.Pdf.Tests.Fluent;
 
-// The public API of Maviray.Pdf (L-02), listed in src/Maviray.Pdf/PublicApi.txt, so a change to the API is a change to
-// the listing that a review sees. Each exported type comes with its kind and base types, then each public or protected
-// member as its signature. Setting MAVIRAY_PDF_WRITE_PUBLIC_API=true rewrites the listing.
+// The public API of each package's assembly (L-16), listed in src/<assembly>/PublicApi.txt, so a change to the API is a
+// change to the listing that a review sees. Each exported type comes with its kind and base types, then each public or
+// protected member as its signature. Setting MAVIRAY_PDF_WRITE_PUBLIC_API=true rewrites the listings.
 public sealed class PublicApiTests
 {
-    private const string ListingPath = "src/Maviray.Pdf/PublicApi.txt";
     private const string WriteVariable = "MAVIRAY_PDF_WRITE_PUBLIC_API";
 
     private const BindingFlags Declared =
@@ -39,17 +38,20 @@ public sealed class PublicApiTests
 
     private readonly NullabilityInfoContext _nullability = new();
 
-    [Fact]
-    public void ThePublicApiMatchesItsListing()
+    [Theory]
+    [InlineData("Maviray.Pdf")]
+    [InlineData("Maviray.Pdf.Fonts.Default")]
+    public void ThePublicApiMatchesItsListing(string assemblyName)
     {
-        var actual = Listing(typeof(Document).Assembly);
-        var path = RepositoryFiles.PathOf(ListingPath);
+        var actual = Listing(Assembly.Load(assemblyName));
+        var listingPath = $"src/{assemblyName}/PublicApi.txt";
+        var path = RepositoryFiles.PathOf(listingPath);
         if (Environment.GetEnvironmentVariable(WriteVariable) == "true")
         {
             File.WriteAllText(path, string.Join('\n', actual) + "\n");
         }
 
-        Assert.True(File.Exists(path), $"{ListingPath} is missing. Run the tests with {WriteVariable}=true to write it.");
+        Assert.True(File.Exists(path), $"{listingPath} is missing. Run the tests with {WriteVariable}=true to write it.");
         var listed = File.ReadAllText(path).ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
         for (var i = 0; i < Math.Max(listed.Length, actual.Count); i++)
         {
@@ -57,7 +59,7 @@ public sealed class PublicApiTests
             var got = i < actual.Count ? actual[i] : "(the API ends)";
             Assert.True(
                 string.Equals(want, got, StringComparison.Ordinal),
-                $"{ListingPath}, line {i + 1}:\n  listed: {want}\n  actual: {got}\nIf the change is intended, run the tests with {WriteVariable}=true and review the listing's diff.");
+                $"{listingPath}, line {i + 1}:\n  listed: {want}\n  actual: {got}\nIf the change is intended, run the tests with {WriteVariable}=true and review the listing's diff.");
         }
     }
 
