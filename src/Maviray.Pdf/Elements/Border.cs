@@ -68,11 +68,20 @@ internal sealed class Border : Element
         var advanced = _child.Draw(inner, canvas, page);
         canvas.PopOffset();
 
-        canvas.FillRectangle(0, 0, available.Width, _top, _color);
-        canvas.FillRectangle(0, height - _bottom, available.Width, _bottom, _color);
-        canvas.FillRectangle(0, 0, _left, height, _color);
-        canvas.FillRectangle(available.Width - _right, 0, _right, height, _color);
+        Band(canvas, 0, 0, available.Width, _top);
+        Band(canvas, 0, height - _bottom, available.Width, _bottom);
+        Band(canvas, 0, 0, _left, height);
+        Band(canvas, available.Width - _right, 0, _right, height);
         return advanced;
+    }
+
+    /// <summary>Fills one side's band, unless it has no width or height, as a side the call didn't set.</summary>
+    private void Band(ICanvas canvas, double x, double y, double width, double height)
+    {
+        if (width > 0 && height > 0)
+        {
+            canvas.FillRectangle(x, y, width, height, _color);
+        }
     }
 
     public override void Reset() => _child.Reset();
