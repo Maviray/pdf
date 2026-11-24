@@ -14,8 +14,9 @@
   <ItemGroup>
     <!-- The four Noto Sans faces (spec F-12), embedded under their file names. -->
     <EmbeddedResource Include="Fonts\NotoSans-*.ttf" LogicalName="%(Filename)%(Extension)" />
-    <!-- The fonts' licence, which travels with them (SIL Open Font License, condition 2). -->
-    <None Update="Fonts\OFL.txt" Pack="true" PackagePath="\" />
+    <!-- The fonts' licence, which travels with them (SIL Open Font License, condition 2), at the package's root. A folder
+         as the package path would keep the item's own folder, Fonts/. -->
+    <None Update="Fonts\OFL.txt" Pack="true" PackagePath="OFL.txt" />
   </ItemGroup>
 
 </Project>
