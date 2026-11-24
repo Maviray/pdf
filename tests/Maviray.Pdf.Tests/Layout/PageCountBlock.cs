@@ -6,16 +6,17 @@ namespace Maviray.Pdf.Tests.Layout;
 
 /// <summary>
 /// A test element that shows the page count, 10 points wide, whose height depends on the count it is shown. It records
-/// every count it is drawn with, in order, across passes.
+/// every count it is drawn with, in order, across passes. With <c>showsPageCount</c> false it only records, so the
+/// engine runs no layout passes for it.
 /// </summary>
-internal sealed class PageCountBlock(string name, Func<int, double> heightForCount) : Element(name)
+internal sealed class PageCountBlock(string name, Func<int, double> heightForCount, bool showsPageCount = true) : Element(name)
 {
     private static readonly RgbColor Black = new(0, 0, 0);
 
     /// <summary>Each draw's page number, the count it was shown, and whether it was the render pass.</summary>
     public List<(int Page, int Count, bool Render)> Shown { get; } = [];
 
-    public override bool ShowsPageCount => true;
+    public override bool ShowsPageCount => showsPageCount;
 
     public override Measurement Measure(Size available, PageContext page)
     {
