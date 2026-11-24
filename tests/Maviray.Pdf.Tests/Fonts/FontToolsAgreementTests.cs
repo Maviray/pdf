@@ -20,6 +20,9 @@ public sealed class FontToolsAgreementTests
         Assert.Equal(theirs.Ascender, font.HorizontalHeaderMetrics.Ascender);
         Assert.Equal(theirs.Descender, font.HorizontalHeaderMetrics.Descender);
         Assert.Equal(theirs.FsType, font.FsType);
+        Assert.Equal(theirs.StrikeoutSize, font.StrikeoutSize);
+        Assert.Equal(theirs.StrikeoutPosition, font.StrikeoutPosition);
+        Assert.Equal(theirs.UseTypoMetrics, font.UseTypographicMetrics);
 
         var ours = font.CharacterMappings().ToDictionary(m => m.CodePoint, m => ((int)m.GlyphId, font.GetAdvanceWidth(m.GlyphId)));
         var differences = new List<string>();
