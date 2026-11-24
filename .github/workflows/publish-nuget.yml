@@ -1,4 +1,4 @@
-# Builds, tests and publishes the Maviray.Pdf NuGet package to GitHub Packages.
+# Builds, tests and publishes the NuGet packages, Maviray.Pdf and Maviray.Pdf.Fonts.Default, to GitHub Packages.
 #
 # - Every push to main (an approved, merged pull request) publishes a release and tags it vX.Y.Z.
 # - A repository admin can run it by hand on any branch to publish a pre-release package of that branch.

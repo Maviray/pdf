@@ -135,16 +135,12 @@ Packages are published to GitHub Packages. [Versions and packages](docs/versions
 
 ### A first document
 
-This method writes a one-page invoice. It needs `using Maviray.Pdf;` and the four static Noto Sans files, regular, bold, italic and bold italic, in `fontFolder`. Noto Sans is licensed under the SIL Open Font License.
+This method writes a one-page invoice. It needs the `Maviray.Pdf` and `Maviray.Pdf.Fonts.Default` packages, and `using Maviray.Pdf;`. `RegisterNotoSans()` adds Noto Sans, the family of the default text style, to the process-wide font registry; a second call does nothing. Noto Sans is licensed under the SIL Open Font License.
 
 ```csharp
-static void SaveInvoice(string fontFolder, string path)
+static void SaveInvoice(string path)
 {
-    var fonts = new FontRegistry()
-        .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Regular.ttf"))
-        .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Bold.ttf"))
-        .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Italic.ttf"))
-        .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-BoldItalic.ttf"));
+    FontRegistry.Default.RegisterNotoSans();
 
     (string Item, string Amount)[] lines =
     [
@@ -155,13 +151,12 @@ static void SaveInvoice(string fontFolder, string path)
 
     Document.Create(document =>
     {
-        document.Settings(settings => settings.Fonts(fonts));
         document.Metadata(metadata => metadata.Title("Invoice 2026-0042").Author("Maviray GmbH").Language("en-GB"));
         document.Page(page =>
         {
             page.Size(PageSize.A4);
             page.Margin(20, Unit.Millimetre);
-            page.DefaultTextStyle(style => style.FontFamily("Noto Sans").FontSize(10));
+            page.DefaultTextStyle(style => style.FontSize(10));
 
             page.Header().PaddingBottom(12).Text("Invoice 2026-0042").FontSize(20).Bold();
 
@@ -203,6 +198,7 @@ static void SaveInvoice(string fontFolder, string path)
 | Path | Contents |
 | --- | --- |
 | `src/Maviray.Pdf/` | The library |
+| `src/Maviray.Pdf.Fonts.Default/` | The default fonts package: Noto Sans and `RegisterNotoSans()` |
 | `tests/Maviray.Pdf.Tests/` | Its tests |
 | `docs/` | The design document (draft v0.6), the release records, the QA material, and how versions and packages work |
 | `.github/workflows/` | The build check for pull requests, and package publishing |

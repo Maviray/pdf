@@ -1,8 +1,8 @@
 # Versions and packages
 
-Status: 2026-11-19
+Status: 2026-11-24
 
-This page covers how the Maviray.Pdf NuGet package is built, versioned and published. The workflow is [`.github/workflows/publish-nuget.yml`](../.github/workflows/publish-nuget.yml), and the version rules are in [`GitVersion.yml`](../GitVersion.yml).
+This page covers how the two NuGet packages, `Maviray.Pdf` and `Maviray.Pdf.Fonts.Default`, are built, versioned and published. Both are packed from the same commit and carry the same version. The workflow is [`.github/workflows/publish-nuget.yml`](../.github/workflows/publish-nuget.yml), and the version rules are in [`GitVersion.yml`](../GitVersion.yml).
 
 ## Where packages go
 
@@ -25,7 +25,7 @@ On Linux and macOS, also add `--store-password-in-clear-text`, because those pla
 
 | Trigger | Who can start it | What it publishes |
 | --- | --- | --- |
-| A merge into `main` | Automatic. The ruleset only lets approved pull requests in. | A release, such as `0.1.0`. The workflow tags the commit `v0.1.0` and creates a GitHub release with the package attached. |
+| A merge into `main` | Automatic. The ruleset only lets approved pull requests in. | A release, such as `0.1.0`. The workflow tags the commit `v0.1.0` and creates a GitHub release with both packages attached. |
 | Run by hand, on any branch | Repository admins only. Anyone else's run stops at its first step. | A pre-release of that branch, such as `0.2.0-alpha.my-feature.5`. |
 
 Merges into `develop` don't publish anything. To try a change through a real package before it merges, run the workflow on its branch:

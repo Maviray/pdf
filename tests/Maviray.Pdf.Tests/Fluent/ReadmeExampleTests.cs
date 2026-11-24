@@ -1,4 +1,3 @@
-using Maviray.Pdf.Tests.Fonts;
 using Maviray.Pdf.Tests.Text;
 using Maviray.Pdf.Tests.Validation;
 
@@ -24,20 +23,16 @@ public sealed class ReadmeExampleTests
             $"README.md's example differs from {ThisFile} at its line {difference + 1}:\n  README: {At(shown, difference)}\n  test:   {At(example, difference)}");
 
         var path = GeneratedFiles.Save([]);
-        SaveInvoice(Path.GetDirectoryName(TestFonts.NotoSansPath("Regular"))!, path);
+        SaveInvoice(path);
 
         Qpdf.Check(path);
         Assert.Contains("Invoice 2026-0042", Poppler.ExtractText(path), StringComparison.Ordinal);
     }
 
     // README begin
-    static void SaveInvoice(string fontFolder, string path)
+    static void SaveInvoice(string path)
     {
-        var fonts = new FontRegistry()
-            .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Regular.ttf"))
-            .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Bold.ttf"))
-            .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Italic.ttf"))
-            .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-BoldItalic.ttf"));
+        FontRegistry.Default.RegisterNotoSans();
 
         (string Item, string Amount)[] lines =
         [
@@ -48,13 +43,12 @@ public sealed class ReadmeExampleTests
 
         Document.Create(document =>
         {
-            document.Settings(settings => settings.Fonts(fonts));
             document.Metadata(metadata => metadata.Title("Invoice 2026-0042").Author("Maviray GmbH").Language("en-GB"));
             document.Page(page =>
             {
                 page.Size(PageSize.A4);
                 page.Margin(20, Unit.Millimetre);
-                page.DefaultTextStyle(style => style.FontFamily("Noto Sans").FontSize(10));
+                page.DefaultTextStyle(style => style.FontSize(10));
 
                 page.Header().PaddingBottom(12).Text("Invoice 2026-0042").FontSize(20).Bold();
 
