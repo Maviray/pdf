@@ -2,7 +2,7 @@
 
 A fully managed .NET library for generating PDF documents from C# code. You compose documents through a fluent layout API, and every layer is written in C#: the PDF writer, the font parser and subsetter, text layout, image handling and the layout engine.
 
-> **Status: early development.** Version 0.0.1 contains only the build and publishing set-up: the `Maviray.Pdf` package exists but has no PDF features yet. The [design document](docs/design/Maviray.Pdf-Design-Document.md) is a draft (v0.2). The next milestone is P0 Foundations: the PDF object model, a streaming writer, and a hello-world file that opens cleanly in every major viewer.
+> **Status: early development.** The published version, 0.0.1, contains only the build and publishing set-up. Release [0.1.0](docs/releases/0.1.0/README.md) is in progress on `develop`. It brings the PDF writer, embedded TrueType fonts, text layout and the fluent layout API that [A first document](#a-first-document) shows. The [design document](docs/design/Maviray.Pdf-Design-Document.md) is a draft (v0.6).
 
 ## Why fully managed
 
@@ -35,7 +35,7 @@ Version 1 targets data-driven business documents in European languages: invoices
 
 ## Planned API
 
-This is the shape the design document proposes. Names and details may change before P1.
+This is the v1 API as the design document (draft v0.6) describes it. P1 brings pages, containers, text and fonts; tables and images come in P2.
 
 ```csharp
 FontRegistry.Default.Register("Inter", File.OpenRead("Inter-Regular.ttf"));
@@ -47,7 +47,7 @@ Document.Create(doc =>
 
     doc.Page(page =>
     {
-        page.Size(PageSizes.A4);
+        page.Size(PageSize.A4);
         page.Margin(20, Unit.Millimetre);
         page.DefaultTextStyle(t => t.FontFamily("Inter").FontSize(10));
 
@@ -59,7 +59,7 @@ Document.Create(doc =>
             col.Item().Text(customer.Name).Bold();
             col.Item().Table(table =>
             {
-                table.Columns(c => { c.Relative(3); c.Constant(80); });
+                table.Columns(c => { c.Flex(3); c.Fixed(80); });
                 table.Header(h => { h.Cell().Text("Item"); h.Cell().AlignRight().Text("Amount"); });
                 foreach (var line in invoice.Lines)
                 {
@@ -71,10 +71,10 @@ Document.Create(doc =>
 
         page.Footer().AlignCenter().Text(t =>
         {
-            t.Span("Page "); t.CurrentPageNumber(); t.Span(" of "); t.TotalPages();
+            t.Span("Page "); t.PageNumber(); t.Span(" of "); t.PageCount();
         });
     });
-}).GeneratePdf(outputStream);
+}).Save(outputStream);
 ```
 
 ## Architecture
@@ -133,13 +133,78 @@ dotnet test
 
 Packages are published to GitHub Packages. [Versions and packages](docs/versions-and-packages.md) explains how to add the feed and how versions are numbered.
 
+### A first document
+
+This method writes a one-page invoice. It needs `using Maviray.Pdf;` and the four static Noto Sans files, regular, bold, italic and bold italic, in `fontFolder`. Noto Sans is licensed under the SIL Open Font License.
+
+```csharp
+static void SaveInvoice(string fontFolder, string path)
+{
+    var fonts = new FontRegistry()
+        .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Regular.ttf"))
+        .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Bold.ttf"))
+        .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-Italic.ttf"))
+        .Register("Noto Sans", Path.Combine(fontFolder, "NotoSans-BoldItalic.ttf"));
+
+    (string Item, string Amount)[] lines =
+    [
+        ("Server maintenance, November", "€1,200.00"),
+        ("Backup storage, 2 TB", "€80.00"),
+        ("Support, 6 hours × €95.00", "€570.00"),
+    ];
+
+    Document.Create(document =>
+    {
+        document.Settings(settings => settings.Fonts(fonts));
+        document.Metadata(metadata => metadata.Title("Invoice 2026-0042").Author("Maviray GmbH").Language("en-GB"));
+        document.Page(page =>
+        {
+            page.Size(PageSize.A4);
+            page.Margin(20, Unit.Millimetre);
+            page.DefaultTextStyle(style => style.FontFamily("Noto Sans").FontSize(10));
+
+            page.Header().PaddingBottom(12).Text("Invoice 2026-0042").FontSize(20).Bold();
+
+            page.Content().Column(column =>
+            {
+                column.Spacing(6);
+                column.Item().Text("Maviray GmbH · Musterstraße 1 · 10115 Berlin").FontColor(Color.FromHex("#666666"));
+                column.Item().PaddingTop(12).BorderBottom(1, Color.Black).Row(row =>
+                {
+                    row.Flex().Text("Item").Bold();
+                    row.Fixed(100).AlignRight().Text("Amount").Bold();
+                });
+                foreach (var (item, amount) in lines)
+                {
+                    column.Item().Row(row =>
+                    {
+                        row.Flex().Text(item);
+                        row.Fixed(100).AlignRight().Text(amount);
+                    });
+                }
+
+                column.Item().BorderTop(1, Color.Black).AlignRight().Text("Total: €1,850.00").Bold();
+            });
+
+            page.Footer().AlignCenter().Text(text =>
+            {
+                text.Span("Page ");
+                text.PageNumber();
+                text.Span(" of ");
+                text.PageCount();
+            });
+        });
+    }).Save(path);
+}
+```
+
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
 | `src/Maviray.Pdf/` | The library |
 | `tests/Maviray.Pdf.Tests/` | Its tests |
-| `docs/` | The design document (draft v0.2), and how versions and packages work |
+| `docs/` | The design document (draft v0.6), the release records, the QA material, and how versions and packages work |
 | `.github/workflows/` | The build check for pull requests, and package publishing |
 | `GitVersion.yml` | The version rules |
 | `global.json`, `nuget.config`, `Directory.Packages.props` | The SDK version, the package source and the package versions |
