@@ -35,12 +35,19 @@ internal static partial class Poppler
     }
 
     /// <summary>
-    /// Extracts the text with <c>pdftotext</c>. Blind spot: trailing whitespace and form feeds (page ends) are removed
-    /// before returning, so a test comparing the result can't see differences in either.
+    /// Extracts the text with <c>pdftotext</c>, in its physical-layout mode (<c>-layout</c>) when
+    /// <paramref name="physicalLayout"/> is true. Blind spots:
+    /// <list type="bullet">
+    /// <item>trailing whitespace and form feeds (page ends) are removed before returning;</item>
+    /// <item>pdftotext writes every whitespace character, such as U+00A0 and U+202F, as U+0020;</item>
+    /// <item>in physical-layout mode each line is indented by its x position. The default mode instead joins a line
+    /// that ends with a hyphen, U+002D or U+00AD, to the next, and drops the hyphen.</item>
+    /// </list>
     /// </summary>
-    public static string ExtractText(string path)
+    public static string ExtractText(string path, bool physicalLayout = false)
     {
-        var result = ExternalTool.Run("pdftotext", "-enc", "UTF-8", path, "-");
+        string[] arguments = physicalLayout ? ["-enc", "UTF-8", "-layout", path, "-"] : ["-enc", "UTF-8", path, "-"];
+        var result = ExternalTool.Run("pdftotext", arguments);
         if (result.ExitCode != 0)
         {
             Assert.Fail($"pdftotext exited with {result.ExitCode} for {path}:\n{result.StandardError}");
