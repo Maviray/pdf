@@ -79,3 +79,4 @@ The branch `feature/37-fluent-api` is stacked on `feature/36-text-element-styles
     - Replacing a file loses its ACLs, attributes and hard links.
     - Lone surrogates in metadata become U+FFFD.
   - **Ruling:** Task 2 put the plan's two unit and page-size test files into one.
+- **CI** on `d1b7365`, [run 45370292008](https://github.com/Maviray/pdf/actions/runs/45370292008): 1,127 of 1,127 tests passed, and without ICU the text tests passed 306 of 306. The PR is [#47](https://github.com/Maviray/pdf/pull/47).
