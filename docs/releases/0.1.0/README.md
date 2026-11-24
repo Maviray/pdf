@@ -27,6 +27,7 @@ Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Mav
 | [#35](https://github.com/Maviray/pdf/issues/35) P1.10 | Containers | In review, 2026-11-24. Plan: [issue 35](plans/2026-11-24-issue-35-containers.md). Log: [issue 35](execution-logs/2026-11-24-issue-35-containers.md) |
 | [#36](https://github.com/Maviray/pdf/issues/36) P1.11 | Text element, styles and fonts | In review, 2026-11-24. Plan: [issue 36](plans/2026-11-24-issue-36-text-element-styles-fonts.md). Log: [issue 36](execution-logs/2026-11-24-issue-36-text-element-styles-fonts.md) |
 | [#37](https://github.com/Maviray/pdf/issues/37) P1.12 | Fluent API, settings and metadata | In review, 2026-11-24. Plan: [issue 37](plans/2026-11-24-issue-37-fluent-api.md). Log: [issue 37](execution-logs/2026-11-24-issue-37-fluent-api.md) |
+| [#38](https://github.com/Maviray/pdf/issues/38) P1.13 | Default fonts package | In review, 2026-11-24. Plan: [issue 38](plans/2026-11-24-issue-38-default-fonts-package.md). Log: [issue 38](execution-logs/2026-11-24-issue-38-default-fonts-package.md) |
 
 macOS Preview isn't checked in P0, because no Mac is available. The 0.1.0 release check covers it if a Mac is available by then, and otherwise records it as not checked.
 
