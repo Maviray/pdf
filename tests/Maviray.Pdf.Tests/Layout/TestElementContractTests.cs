@@ -33,6 +33,15 @@ public sealed class TestElementContractTests
         Assert.Contains("was Partial, and its draw didn't advance", failure.Message, StringComparison.Ordinal);
     }
 
+    // Containers draw each child at its measured size (P1.10 plan, ruling 1), so it must measure the same there.
+    [Fact]
+    public void TheCheckCatchesASizeThatMeasuresDifferently()
+    {
+        var failure = Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => ElementContract.Check(() => new PickyBlock("Picky", 10, 10), new Size(100, 100)));
+
+        Assert.Contains("at its measured size", failure.Message, StringComparison.Ordinal);
+    }
+
     // A draw after Full finishes the element, which counts as progress, so a container can count on it.
     [Fact]
     public void TheCheckCatchesAFullDrawThatDoesntAdvance()

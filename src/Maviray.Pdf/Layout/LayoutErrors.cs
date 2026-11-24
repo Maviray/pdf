@@ -2,9 +2,20 @@ using System.Globalization;
 
 namespace Maviray.Pdf.Layout;
 
-/// <summary>Writes lengths and sizes for <see cref="LayoutException"/> messages, the same under every culture.</summary>
+/// <summary>Builds <see cref="LayoutException"/>s, and writes their lengths and sizes the same under every culture.</summary>
 internal static class LayoutErrors
 {
+    /// <summary>
+    /// The error for <paramref name="source"/> on <paramref name="page"/>: its path with <c>Page n</c> first, the
+    /// reason, and the space it had (L-05). An element that can never fit throws it from <c>Measure</c>.
+    /// </summary>
+    public static LayoutException Error(PageContext page, Element source, string reason, Size space)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(source);
+        return new($"Page {page.PageNumber} > {source.Path}", reason, space.Width, space.Height);
+    }
+
     /// <summary>A length in points with at most two decimals, such as <c>31.2 pt</c>.</summary>
     public static string Length(double points) => Number(points) + " pt";
 

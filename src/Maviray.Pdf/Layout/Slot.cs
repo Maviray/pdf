@@ -3,8 +3,9 @@ using Maviray.Pdf.Drawing;
 namespace Maviray.Pdf.Layout;
 
 /// <summary>
-/// A page's header, content or footer (spec L-04): the top of its tree, named <c>Header</c>, <c>Content</c> or
-/// <c>Footer</c> in paths (L-05). It measures, draws and resets its child unchanged.
+/// A named place in the tree, so a path reads as L-05 shows: a page's <c>Header</c>, <c>Content</c> or <c>Footer</c>
+/// (L-04), a Column's <c>Item n</c>, or a Row's <c>Fixed n</c>, <c>Flex n</c> or <c>Auto n</c> (L-06). It measures,
+/// draws and resets its child unchanged.
 /// </summary>
 internal sealed class Slot : Element
 {

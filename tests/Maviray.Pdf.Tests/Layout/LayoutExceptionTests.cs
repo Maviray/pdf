@@ -23,6 +23,17 @@ public sealed class LayoutExceptionTests
     }
 
     [Fact]
+    public void TheErrorBuilderPutsThePageFirst()
+    {
+        var block = new FixedBlock("Block", 30, 10, new Maviray.Pdf.Writer.RgbColor(0, 0, 0));
+
+        var exception = LayoutErrors.Error(new PageContext(3, 3, isRenderPass: true), block, "it is too wide.", new Size(20, 100));
+
+        Assert.Equal("Page 3 > Block: it is too wide.", exception.Message);
+        Assert.Equal(("Page 3 > Block", 20.0, 100.0), (exception.ElementPath, exception.AvailableWidth, exception.AvailableHeight));
+    }
+
+    [Fact]
     public void LengthsAreWrittenWithoutTheCulture()
     {
         var original = CultureInfo.CurrentCulture;

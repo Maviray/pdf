@@ -10,9 +10,13 @@ namespace Maviray.Pdf.Tests.Layout;
 /// <item>the size never exceeds the available size;</item>
 /// <item><c>None</c> has no size;</item>
 /// <item>after <c>Partial</c> or <c>Full</c>, <c>Draw</c> returns that it advanced;</item>
+/// <item>measured again at its measured size, it gives the same fit and size, because containers draw each child
+/// at its measured size (P1.10 plan, ruling 1);</item>
 /// <item><c>Reset()</c> brings back the first measurement.</item>
 /// </list>
-/// Every element type of the engine runs it (P1.9, P1.10, P1.11).
+/// It also measures at an infinite width and the first size's height, which L-03 says every element handles: the
+/// answer repeats and its width is finite. Nothing is drawn at an infinite width. Every element type of the engine
+/// runs it (P1.9, P1.10, P1.11).
 /// </summary>
 internal static class ElementContract
 {
@@ -22,6 +26,11 @@ internal static class ElementContract
     {
         ArgumentNullException.ThrowIfNull(make);
         var page = new PageContext(1, 1, isRenderPass: true);
+        if (sizes.Length > 0)
+        {
+            CheckInfiniteWidth(make(), new Size(double.PositiveInfinity, sizes[0].Height), page);
+        }
+
         foreach (var size in sizes)
         {
             var element = make();
@@ -41,6 +50,11 @@ internal static class ElementContract
                     break;
                 }
 
+                var atSize = element.Measure(measurement.Size, page);
+                Assert.True(
+                    atSize.Fit == measurement.Fit && atSize.Size == measurement.Size,
+                    $"{element.Path} at {size} measured {Show(measurement)}, and at its measured size {Show(atSize)}.");
+
                 var advanced = element.Draw(size, NullCanvas.Instance, page);
                 Assert.True(advanced, $"{element.Path} at {size} was {measurement.Fit}, and its draw didn't advance.");
                 if (measurement.Fit == Fit.Full)
@@ -53,6 +67,13 @@ internal static class ElementContract
             var reset = element.Measure(size, page);
             Assert.True(Same(first, reset), $"{element.Path} at {size} measured {Show(first)} first, and {Show(reset)} after Reset.");
         }
+    }
+
+    private static void CheckInfiniteWidth(Element element, Size size, PageContext page)
+    {
+        var measurement = element.Measure(size, page);
+        Assert.True(Same(measurement, element.Measure(size, page)), $"{element.Path} at an infinite width measured differently twice.");
+        Assert.True(double.IsFinite(measurement.Size.Width), $"{element.Path} at an infinite width measured {measurement.Size}.");
     }
 
     private static bool Same(Measurement a, Measurement b) =>

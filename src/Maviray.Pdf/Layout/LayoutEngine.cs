@@ -152,5 +152,5 @@ internal static class LayoutEngine
 
     /// <summary>An error that names the measurement's source, with <c>Page n</c> first, and the space the source had.</summary>
     private static LayoutException Error(PageContext page, Measurement measurement, string reason) =>
-        new($"Page {page.PageNumber} > {measurement.Source.Path}", reason, measurement.Space.Width, measurement.Space.Height);
+        LayoutErrors.Error(page, measurement.Source, reason, measurement.Space);
 }
