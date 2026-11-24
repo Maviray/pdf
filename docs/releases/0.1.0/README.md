@@ -23,6 +23,7 @@ Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Mav
 | [#32](https://github.com/Maviray/pdf/issues/32) P1.7 | Text layout | In review, 2026-11-23. Plan: [issue 32](plans/2026-11-23-issue-32-text-layout.md). Log: [issue 32](execution-logs/2026-11-23-issue-32-text-layout.md) |
 | [#33](https://github.com/Maviray/pdf/issues/33) P1.8 | Text gate | In review, 2026-11-24. Plan: [issue 33](plans/2026-11-24-issue-33-text-gate.md). Log: [issue 33](execution-logs/2026-11-24-issue-33-text-gate.md) |
 | P1 layout spec | Design of P1 Layout and fluent API and its six work items | Approved, 2026-11-23, merged in [#29](https://github.com/Maviray/pdf/pull/29). Design: [P1 Layout](specs/2026-11-23-p1-layout-design.md) |
+| [#34](https://github.com/Maviray/pdf/issues/34) P1.9 | Layout engine and canvas | In review, 2026-11-24. Plan: [issue 34](plans/2026-11-24-issue-34-layout-engine-canvas.md). Log: [issue 34](execution-logs/2026-11-24-issue-34-layout-engine-canvas.md) |
 
 macOS Preview isn't checked in P0, because no Mac is available. The 0.1.0 release check covers it if a Mac is available by then, and otherwise records it as not checked.
 
