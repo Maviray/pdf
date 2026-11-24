@@ -340,6 +340,25 @@ public static class ContainerExtensions
     public static void VerticalLine(this IContainer container, double thickness, Unit unit, Color color) =>
         ContainerSlot.Of(container).Set(new LineNode(true, Units.ToPoints(thickness, unit, nameof(thickness)), color));
 
+    /// <summary>A paragraph of one span of text, styled through the builder it returns.</summary>
+    /// <param name="container">The container to fill.</param>
+    /// <param name="text">The text; a line feed starts a new line.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="text"/> is null.</exception>
+    public static TextSpanBuilder Text(this IContainer container, string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        return Wrap(container, new TextNode()).Add(TextRunKind.Text, text);
+    }
+
+    /// <summary>A paragraph of spans: text, the page number and the page count.</summary>
+    /// <param name="container">The container to fill.</param>
+    /// <param name="compose">Adds the spans and sets the alignment.</param>
+    public static void Text(this IContainer container, Action<TextBuilder> compose)
+    {
+        ArgumentNullException.ThrowIfNull(compose);
+        compose(new TextBuilder(Wrap(container, new TextNode())));
+    }
+
     /// <summary>Ends the page here; what follows starts on the next page.</summary>
     /// <param name="container">The container to fill.</param>
     public static void PageBreak(this IContainer container) => ContainerSlot.Of(container).Set(new PageBreakNode());
