@@ -1,14 +1,15 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Maviray.Pdf.Tests.Validation;
 
 /// <summary>Renders and reads generated PDFs with poppler, a PDF reader we didn't write (spec D-11).</summary>
-internal static class Poppler
+internal static partial class Poppler
 {
     /// <summary>
     /// Renders every page at 72 dpi, so one point is one pixel, next to the PDF as <c>&lt;name&gt;-&lt;page&gt;.ppm</c>.
-    /// Fails on a nonzero exit code or anything on stderr, because poppler reports syntax errors there but may still
-    /// exit with 0.
+    /// Fails on a nonzero exit code or any of <see cref="Diagnostics"/>, because poppler reports syntax errors on
+    /// stderr but may still exit with 0.
     /// </summary>
     public static IReadOnlyList<PpmImage> Render(string path)
     {
@@ -20,9 +21,10 @@ internal static class Poppler
         }
 
         var result = ExternalTool.Run("pdftoppm", "-r", "72", path, Path.Combine(directory, stem));
-        if (result.ExitCode != 0 || result.StandardError.Length > 0)
+        var diagnostics = Diagnostics(result.StandardError);
+        if (result.ExitCode != 0 || diagnostics.Count > 0)
         {
-            Assert.Fail($"pdftoppm exited with {result.ExitCode} for {path}:\n{result.StandardError}");
+            Assert.Fail($"pdftoppm exited with {result.ExitCode} for {path}:\n{string.Join('\n', diagnostics)}");
         }
 
         return Directory.GetFiles(directory, stem + "-*.ppm")
@@ -48,7 +50,7 @@ internal static class Poppler
     }
 
     /// <summary>
-    /// Lists the fonts with <c>pdffonts</c>. Fails on a nonzero exit code or anything on stderr, because poppler
+    /// Lists the fonts with <c>pdffonts</c>. Fails on a nonzero exit code or any of <see cref="Diagnostics"/>, because poppler
     /// reports problems in a font's dictionaries there, such as a bad ToUnicode CMap, but still exits with 0. The
     /// columns are found by their header names over the dashed line, so the parse works with poppler's
     /// <c>encoding</c> column and with xpdf's pdffonts, which has none. pdffonts pads a name but never cuts it, so a
@@ -62,9 +64,10 @@ internal static class Poppler
     public static IReadOnlyList<PdfFontReport> ReadFonts(ToolResult result, string path)
     {
         ArgumentNullException.ThrowIfNull(result);
-        if (result.ExitCode != 0 || result.StandardError.Length > 0)
+        var diagnostics = Diagnostics(result.StandardError);
+        if (result.ExitCode != 0 || diagnostics.Count > 0)
         {
-            Assert.Fail($"pdffonts exited with {result.ExitCode} for {path}:\n{result.StandardError}");
+            Assert.Fail($"pdffonts exited with {result.ExitCode} for {path}:\n{string.Join('\n', diagnostics)}");
         }
 
         var lines = result.StandardOutput.Split('\n').Select(line => line.TrimEnd('\r')).ToList();
@@ -85,6 +88,21 @@ internal static class Poppler
             .Select(row => Report(row, columns))
             .ToList();
     }
+
+    /// <summary>
+    /// The lines of poppler's <paramref name="standardError"/> that report a problem with the file. Poppler's Windows
+    /// build also writes <c>Syntax Error: No display font for '&lt;name&gt;'</c> for a substitute font the machine
+    /// lacks, such as Symbol or Arial Unicode, whenever a file has a font that isn't embedded. That line is about the
+    /// machine, so it is dropped; any other wording is kept.
+    /// </summary>
+    public static IReadOnlyList<string> Diagnostics(string standardError) => standardError
+        .Split('\n')
+        .Select(line => line.TrimEnd('\r'))
+        .Where(line => line.Length > 0 && !MissingDisplayFont().IsMatch(line))
+        .ToList();
+
+    [GeneratedRegex("^Syntax Error: No display font for '[^']*'$", RegexOptions.CultureInvariant)]
+    private static partial Regex MissingDisplayFont();
 
     private static PdfFontReport Report(string row, Dictionary<string, (int Start, int Length)> columns)
     {
