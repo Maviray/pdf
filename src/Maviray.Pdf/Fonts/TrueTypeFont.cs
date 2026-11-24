@@ -72,6 +72,9 @@ internal sealed class TrueTypeFont
         WeightClass = os2?.WeightClass ?? ((MacStyle & 0x0001) != 0 ? 700 : 400);
         IsItalic = ((os2?.FsSelection ?? 0) & 0x0001) != 0 || (MacStyle & 0x0002) != 0;
         CapHeight = os2?.CapHeight;
+        StrikeoutSize = os2?.StrikeoutSize;
+        StrikeoutPosition = os2?.StrikeoutPosition;
+        UseTypographicMetrics = ((os2?.FsSelection ?? 0) & 0x0080) != 0;
         ItalicAngle = post?.ItalicAngle ?? 0;
         IsFixedPitch = post?.IsFixedPitch ?? false;
         UnderlinePosition = post?.UnderlinePosition ?? 0;
@@ -116,6 +119,15 @@ internal sealed class TrueTypeFont
 
     /// <summary><c>OS/2.sCapHeight</c>, from version 2, or null.</summary>
     public int? CapHeight { get; }
+
+    /// <summary><c>OS/2.yStrikeoutSize</c>, the strikethrough's thickness, or null without <c>OS/2</c>.</summary>
+    public int? StrikeoutSize { get; }
+
+    /// <summary><c>OS/2.yStrikeoutPosition</c>, the top of the strikethrough above the baseline, or null without <c>OS/2</c>.</summary>
+    public int? StrikeoutPosition { get; }
+
+    /// <summary>Whether <c>OS/2.fsSelection</c> sets bit 7, USE_TYPO_METRICS: line spacing comes from the typographic metrics.</summary>
+    public bool UseTypographicMetrics { get; }
 
     public int UnderlinePosition { get; }
 

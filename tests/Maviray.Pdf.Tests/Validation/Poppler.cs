@@ -1,14 +1,17 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Maviray.Pdf.Tests.Validation;
 
 /// <summary>Renders and reads generated PDFs with poppler, a PDF reader we didn't write (spec D-11).</summary>
 internal static class Poppler
 {
+    private static readonly Regex MissingDisplayFont = new("^Syntax Error: No display font for '[^']*'$", RegexOptions.CultureInvariant);
+
     /// <summary>
     /// Renders every page at 72 dpi, so one point is one pixel, next to the PDF as <c>&lt;name&gt;-&lt;page&gt;.ppm</c>.
-    /// Fails on a nonzero exit code or anything on stderr, because poppler reports syntax errors there but may still
-    /// exit with 0.
+    /// Fails on a nonzero exit code or any of <see cref="Diagnostics"/>, because poppler reports syntax errors on
+    /// stderr but may still exit with 0.
     /// </summary>
     public static IReadOnlyList<PpmImage> Render(string path)
     {
@@ -20,9 +23,10 @@ internal static class Poppler
         }
 
         var result = ExternalTool.Run("pdftoppm", "-r", "72", path, Path.Combine(directory, stem));
-        if (result.ExitCode != 0 || result.StandardError.Length > 0)
+        var diagnostics = Diagnostics(result.StandardError);
+        if (result.ExitCode != 0 || diagnostics.Count > 0)
         {
-            Assert.Fail($"pdftoppm exited with {result.ExitCode} for {path}:\n{result.StandardError}");
+            Assert.Fail($"pdftoppm exited with {result.ExitCode} for {path}:\n{string.Join('\n', diagnostics)}");
         }
 
         return Directory.GetFiles(directory, stem + "-*.ppm")
@@ -33,12 +37,19 @@ internal static class Poppler
     }
 
     /// <summary>
-    /// Extracts the text with <c>pdftotext</c>. Blind spot: trailing whitespace and form feeds (page ends) are removed
-    /// before returning, so a test comparing the result can't see differences in either.
+    /// Extracts the text with <c>pdftotext</c>, in its physical-layout mode (<c>-layout</c>) when
+    /// <paramref name="physicalLayout"/> is true. Blind spots:
+    /// <list type="bullet">
+    /// <item>trailing whitespace and form feeds (page ends) are removed before returning;</item>
+    /// <item>pdftotext writes every whitespace character, such as U+00A0 and U+202F, as U+0020;</item>
+    /// <item>in physical-layout mode each line is indented by its x position. The default mode instead joins a line
+    /// that ends with a hyphen, U+002D or U+00AD, to the next, and drops the hyphen.</item>
+    /// </list>
     /// </summary>
-    public static string ExtractText(string path)
+    public static string ExtractText(string path, bool physicalLayout = false)
     {
-        var result = ExternalTool.Run("pdftotext", "-enc", "UTF-8", path, "-");
+        string[] arguments = physicalLayout ? ["-enc", "UTF-8", "-layout", path, "-"] : ["-enc", "UTF-8", path, "-"];
+        var result = ExternalTool.Run("pdftotext", arguments);
         if (result.ExitCode != 0)
         {
             Assert.Fail($"pdftotext exited with {result.ExitCode} for {path}:\n{result.StandardError}");
@@ -48,7 +59,7 @@ internal static class Poppler
     }
 
     /// <summary>
-    /// Lists the fonts with <c>pdffonts</c>. Fails on a nonzero exit code or anything on stderr, because poppler
+    /// Lists the fonts with <c>pdffonts</c>. Fails on a nonzero exit code or any of <see cref="Diagnostics"/>, because poppler
     /// reports problems in a font's dictionaries there, such as a bad ToUnicode CMap, but still exits with 0. The
     /// columns are found by their header names over the dashed line, so the parse works with poppler's
     /// <c>encoding</c> column and with xpdf's pdffonts, which has none. pdffonts pads a name but never cuts it, so a
@@ -62,9 +73,10 @@ internal static class Poppler
     public static IReadOnlyList<PdfFontReport> ReadFonts(ToolResult result, string path)
     {
         ArgumentNullException.ThrowIfNull(result);
-        if (result.ExitCode != 0 || result.StandardError.Length > 0)
+        var diagnostics = Diagnostics(result.StandardError);
+        if (result.ExitCode != 0 || diagnostics.Count > 0)
         {
-            Assert.Fail($"pdffonts exited with {result.ExitCode} for {path}:\n{result.StandardError}");
+            Assert.Fail($"pdffonts exited with {result.ExitCode} for {path}:\n{string.Join('\n', diagnostics)}");
         }
 
         var lines = result.StandardOutput.Split('\n').Select(line => line.TrimEnd('\r')).ToList();
@@ -85,6 +97,35 @@ internal static class Poppler
             .Select(row => Report(row, columns))
             .ToList();
     }
+
+    /// <summary>The document information <c>pdfinfo</c> reports, by its labels such as <c>Title</c>, in UTF-8.</summary>
+    public static IReadOnlyDictionary<string, string> Info(string path)
+    {
+        var result = ExternalTool.Run("pdfinfo", "-enc", "UTF-8", path);
+        if (result.ExitCode != 0 || Diagnostics(result.StandardError).Count > 0)
+        {
+            Assert.Fail($"pdfinfo exited with {result.ExitCode} for {path}:\n{result.StandardError}");
+        }
+
+        return result.StandardOutput.Split('\n')
+            .Select(line => line.TrimEnd('\r'))
+            .Where(line => line.Contains(':', StringComparison.Ordinal))
+            .Select(line => (Key: line[..line.IndexOf(':', StringComparison.Ordinal)], Value: line[(line.IndexOf(':', StringComparison.Ordinal) + 1)..].Trim()))
+            .GroupBy(pair => pair.Key, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Value, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// The lines of poppler's <paramref name="standardError"/> that report a problem with the file. Poppler's Windows
+    /// build also writes <c>Syntax Error: No display font for '&lt;name&gt;'</c> for a substitute font the machine
+    /// lacks, such as Symbol or Arial Unicode, whenever a file has a font that isn't embedded. That line is about the
+    /// machine, so it is dropped; any other wording is kept.
+    /// </summary>
+    public static IReadOnlyList<string> Diagnostics(string standardError) => standardError
+        .Split('\n')
+        .Select(line => line.TrimEnd('\r'))
+        .Where(line => line.Length > 0 && !MissingDisplayFont.IsMatch(line))
+        .ToList();
 
     private static PdfFontReport Report(string row, Dictionary<string, (int Start, int Length)> columns)
     {

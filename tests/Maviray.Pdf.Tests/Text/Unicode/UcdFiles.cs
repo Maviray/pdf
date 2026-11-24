@@ -64,6 +64,38 @@ internal static class UcdFiles
         }
     }
 
+    /// <summary>
+    /// The default values a file states in its <c># @missing: first..last; value</c> comment lines, in file order.
+    /// Data lines override them.
+    /// </summary>
+    public static IEnumerable<(int First, int Last, string Value)> ReadMissing(string fileName)
+    {
+        const string Prefix = "# @missing:";
+        foreach (var line in ReadText(fileName).Split('\n'))
+        {
+            if (!line.StartsWith(Prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var fields = line[Prefix.Length..].Split('#')[0].Split(';');
+            var (first, last) = Range(fields[0].Trim());
+            yield return (first, last, fields[1].Trim());
+        }
+    }
+
+    /// <summary>A code point or a <c>first..last</c> range, in hex, as the UCD files write them.</summary>
+    public static (int First, int Last) Range(string field)
+    {
+        var dots = field.IndexOf("..", StringComparison.Ordinal);
+        return dots < 0
+            ? (Hex(field), Hex(field))
+            : (Hex(field[..dots]), Hex(field[(dots + 2)..]));
+    }
+
+    private static int Hex(string text) =>
+        int.Parse(text, System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.CultureInfo.InvariantCulture);
+
     private static string FindDataFolder()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)

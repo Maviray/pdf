@@ -37,6 +37,11 @@ internal sealed class PdfFileWriter : IDisposable
             throw new ArgumentException("The file ID must be exactly 16 bytes.", nameof(options));
         }
 
+        if (options.HashedFileId && options.FileId is not null)
+        {
+            throw new ArgumentException("A file ID can't be both given and hashed.", nameof(options));
+        }
+
         if (!Enum.IsDefined(options.CompressionLevel))
         {
             throw new ArgumentOutOfRangeException(nameof(options), options.CompressionLevel, "The compression level isn't a defined value.");
@@ -44,7 +49,7 @@ internal sealed class PdfFileWriter : IDisposable
 
         _options = options;
         _fileId = options.FileId is null ? RandomNumberGenerator.GetBytes(16) : [.. options.FileId];
-        _output = new PdfOutput(destination);
+        _output = new PdfOutput(destination, hash: options.HashedFileId);
 
         // The second line is a comment of four bytes above 127, so transfer tools treat the file as binary.
         _output.Write("%PDF-1.7\n%"u8);
@@ -114,11 +119,12 @@ internal sealed class PdfFileWriter : IDisposable
     }
 
     /// <summary>
-    /// Writes the cross-reference table and the trailer with <paramref name="root"/> as the catalog, then flushes the
-    /// output and the destination. Nothing can be written afterwards.
+    /// Writes the cross-reference table and the trailer with <paramref name="root"/> as the catalog and
+    /// <paramref name="info"/> as the document information dictionary, then flushes the output and the destination.
+    /// Nothing can be written afterwards.
     /// </summary>
     /// <exception cref="InvalidOperationException">A reserved object was never written, or the file is already closed.</exception>
-    public void Close(PdfReference root)
+    public void Close(PdfReference root, PdfReference? info = null)
     {
         ThrowIfClosed();
         ArgumentNullException.ThrowIfNull(root);
@@ -137,7 +143,7 @@ internal sealed class PdfFileWriter : IDisposable
 
         try
         {
-            WriteCrossReferenceAndTrailer(root);
+            WriteCrossReferenceAndTrailer(root, info);
         }
         catch
         {
@@ -151,7 +157,7 @@ internal sealed class PdfFileWriter : IDisposable
     /// <summary>Returns the output's buffer. Disposing without <see cref="Close"/> leaves an incomplete file.</summary>
     public void Dispose() => _output.Dispose();
 
-    private void WriteCrossReferenceAndTrailer(PdfReference root)
+    private void WriteCrossReferenceAndTrailer(PdfReference root, PdfReference? info)
     {
         var xref = _output.Position;
         _output.Write("xref\n0 "u8);
@@ -163,11 +169,18 @@ internal sealed class PdfFileWriter : IDisposable
             _output.Write(" 00000 n \n"u8);
         }
 
-        var id = new PdfString(_fileId, PdfStringForm.Hex);
+        // Deterministic mode hashes every byte before the trailer, the cross-reference table included (L-13).
+        ReadOnlyMemory<byte> fileId = _options.HashedFileId ? _output.HashSoFar().AsMemory(0, 16) : _fileId;
+        var id = new PdfString(fileId, PdfStringForm.Hex);
         var trailer = new PdfDictionary()
             .Set(PdfName.Size, new PdfInteger(_offsets.Count))
-            .Set(PdfName.Root, root)
-            .Set(PdfName.Id, new PdfArray(id, id));
+            .Set(PdfName.Root, root);
+        if (info is not null)
+        {
+            trailer.Set(new PdfName("Info"), info);
+        }
+
+        trailer.Set(PdfName.Id, new PdfArray(id, id));
 
         _output.Write("trailer\n"u8);
         trailer.WriteTo(_output);
