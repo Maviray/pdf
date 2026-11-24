@@ -1,0 +1,200 @@
+readonly struct Maviray.Pdf.Color : System.IEquatable<Maviray.Pdf.Color>
+  bool Equals(Maviray.Pdf.Color other)
+  byte B { get; }
+  byte G { get; }
+  byte R { get; }
+  override bool Equals(object? obj)
+  override int GetHashCode()
+  override string ToString()
+  static Maviray.Pdf.Color Black { get; }
+  static Maviray.Pdf.Color FromHex(string hex)
+  static Maviray.Pdf.Color FromRgb(byte r, byte g, byte b)
+  static Maviray.Pdf.Color White { get; }
+  static bool op_Equality(Maviray.Pdf.Color left, Maviray.Pdf.Color right)
+  static bool op_Inequality(Maviray.Pdf.Color left, Maviray.Pdf.Color right)
+sealed class Maviray.Pdf.ColumnBuilder
+  Maviray.Pdf.ColumnBuilder Spacing(double spacing)
+  Maviray.Pdf.ColumnBuilder Spacing(double spacing, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.IContainer Item()
+static class Maviray.Pdf.ContainerExtensions
+  static Maviray.Pdf.IContainer AlignBottom(this Maviray.Pdf.IContainer container)
+  static Maviray.Pdf.IContainer AlignCenter(this Maviray.Pdf.IContainer container)
+  static Maviray.Pdf.IContainer AlignLeft(this Maviray.Pdf.IContainer container)
+  static Maviray.Pdf.IContainer AlignMiddle(this Maviray.Pdf.IContainer container)
+  static Maviray.Pdf.IContainer AlignRight(this Maviray.Pdf.IContainer container)
+  static Maviray.Pdf.IContainer AlignTop(this Maviray.Pdf.IContainer container)
+  static Maviray.Pdf.IContainer Background(this Maviray.Pdf.IContainer container, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer Border(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer Border(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Unit unit, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer BorderBottom(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer BorderBottom(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Unit unit, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer BorderLeft(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer BorderLeft(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Unit unit, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer BorderRight(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer BorderRight(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Unit unit, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer BorderTop(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer BorderTop(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Unit unit, Maviray.Pdf.Color color, bool stretch = true)
+  static Maviray.Pdf.IContainer DefaultTextStyle(this Maviray.Pdf.IContainer container, System.Func<Maviray.Pdf.TextStyle, Maviray.Pdf.TextStyle> configure)
+  static Maviray.Pdf.IContainer Height(this Maviray.Pdf.IContainer container, double height)
+  static Maviray.Pdf.IContainer Height(this Maviray.Pdf.IContainer container, double height, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer MaxHeight(this Maviray.Pdf.IContainer container, double height)
+  static Maviray.Pdf.IContainer MaxHeight(this Maviray.Pdf.IContainer container, double height, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer MaxWidth(this Maviray.Pdf.IContainer container, double width)
+  static Maviray.Pdf.IContainer MaxWidth(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer MinHeight(this Maviray.Pdf.IContainer container, double height)
+  static Maviray.Pdf.IContainer MinHeight(this Maviray.Pdf.IContainer container, double height, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer MinWidth(this Maviray.Pdf.IContainer container, double width)
+  static Maviray.Pdf.IContainer MinWidth(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer Padding(this Maviray.Pdf.IContainer container, double all)
+  static Maviray.Pdf.IContainer Padding(this Maviray.Pdf.IContainer container, double all, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer PaddingBottom(this Maviray.Pdf.IContainer container, double bottom)
+  static Maviray.Pdf.IContainer PaddingBottom(this Maviray.Pdf.IContainer container, double bottom, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer PaddingHorizontal(this Maviray.Pdf.IContainer container, double horizontal)
+  static Maviray.Pdf.IContainer PaddingHorizontal(this Maviray.Pdf.IContainer container, double horizontal, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer PaddingLeft(this Maviray.Pdf.IContainer container, double left)
+  static Maviray.Pdf.IContainer PaddingLeft(this Maviray.Pdf.IContainer container, double left, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer PaddingRight(this Maviray.Pdf.IContainer container, double right)
+  static Maviray.Pdf.IContainer PaddingRight(this Maviray.Pdf.IContainer container, double right, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer PaddingTop(this Maviray.Pdf.IContainer container, double top)
+  static Maviray.Pdf.IContainer PaddingTop(this Maviray.Pdf.IContainer container, double top, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer PaddingVertical(this Maviray.Pdf.IContainer container, double vertical)
+  static Maviray.Pdf.IContainer PaddingVertical(this Maviray.Pdf.IContainer container, double vertical, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.IContainer Width(this Maviray.Pdf.IContainer container, double width)
+  static Maviray.Pdf.IContainer Width(this Maviray.Pdf.IContainer container, double width, Maviray.Pdf.Unit unit)
+  static Maviray.Pdf.TextSpanBuilder Text(this Maviray.Pdf.IContainer container, string text)
+  static void Column(this Maviray.Pdf.IContainer container, System.Action<Maviray.Pdf.ColumnBuilder> compose)
+  static void HorizontalLine(this Maviray.Pdf.IContainer container, double thickness, Maviray.Pdf.Color color)
+  static void HorizontalLine(this Maviray.Pdf.IContainer container, double thickness, Maviray.Pdf.Unit unit, Maviray.Pdf.Color color)
+  static void PageBreak(this Maviray.Pdf.IContainer container)
+  static void Row(this Maviray.Pdf.IContainer container, System.Action<Maviray.Pdf.RowBuilder> compose)
+  static void Text(this Maviray.Pdf.IContainer container, System.Action<Maviray.Pdf.TextBuilder> compose)
+  static void VerticalLine(this Maviray.Pdf.IContainer container, double thickness, Maviray.Pdf.Color color)
+  static void VerticalLine(this Maviray.Pdf.IContainer container, double thickness, Maviray.Pdf.Unit unit, Maviray.Pdf.Color color)
+sealed class Maviray.Pdf.Diagnostic
+  Maviray.Pdf.DiagnosticKind Kind { get; }
+  int PageNumber { get; }
+  override string ToString()
+  string ElementPath { get; }
+  string Message { get; }
+enum Maviray.Pdf.DiagnosticKind : int
+  FontFaceSubstituted = 1
+  MissingGlyph = 0
+sealed class Maviray.Pdf.Document
+  byte[] ToBytes()
+  static Maviray.Pdf.Document Create(System.Action<Maviray.Pdf.DocumentBuilder> compose)
+  void Save(System.IO.Stream output)
+  void Save(string path)
+sealed class Maviray.Pdf.DocumentBuilder
+  Maviray.Pdf.DocumentBuilder Metadata(System.Action<Maviray.Pdf.MetadataBuilder> configure)
+  Maviray.Pdf.DocumentBuilder Page(System.Action<Maviray.Pdf.PageBuilder> compose)
+  Maviray.Pdf.DocumentBuilder Settings(System.Action<Maviray.Pdf.SettingsBuilder> configure)
+sealed class Maviray.Pdf.FontRegistry
+  .ctor()
+  Maviray.Pdf.FontRegistry Register(string family, System.IO.Stream data, Maviray.Pdf.FontWeight? weight = null, bool? italic = null)
+  Maviray.Pdf.FontRegistry Register(string family, byte[] data, Maviray.Pdf.FontWeight? weight = null, bool? italic = null)
+  Maviray.Pdf.FontRegistry Register(string family, string path, Maviray.Pdf.FontWeight? weight = null, bool? italic = null)
+  static Maviray.Pdf.FontRegistry Default { get; }
+enum Maviray.Pdf.FontWeight : int
+  Black = 900
+  Bold = 700
+  ExtraBold = 800
+  ExtraLight = 200
+  Light = 300
+  Medium = 500
+  Normal = 400
+  SemiBold = 600
+  Thin = 100
+interface Maviray.Pdf.IContainer
+sealed class Maviray.Pdf.LayoutException : System.Exception, System.Runtime.Serialization.ISerializable
+  .ctor()
+  .ctor(string message)
+  .ctor(string message, System.Exception? innerException)
+  double AvailableHeight { get; }
+  double AvailableWidth { get; }
+  string ElementPath { get; }
+sealed class Maviray.Pdf.MetadataBuilder
+  Maviray.Pdf.MetadataBuilder Author(string author)
+  Maviray.Pdf.MetadataBuilder CreationDate(System.DateTimeOffset date)
+  Maviray.Pdf.MetadataBuilder Creator(string creator)
+  Maviray.Pdf.MetadataBuilder Keywords(string keywords)
+  Maviray.Pdf.MetadataBuilder Language(string tag)
+  Maviray.Pdf.MetadataBuilder Subject(string subject)
+  Maviray.Pdf.MetadataBuilder Title(string title)
+sealed class Maviray.Pdf.PageBuilder
+  Maviray.Pdf.IContainer Content()
+  Maviray.Pdf.IContainer Footer()
+  Maviray.Pdf.IContainer Header()
+  Maviray.Pdf.PageBuilder Background(Maviray.Pdf.Color color)
+  Maviray.Pdf.PageBuilder DefaultTextStyle(System.Func<Maviray.Pdf.TextStyle, Maviray.Pdf.TextStyle> configure)
+  Maviray.Pdf.PageBuilder Margin(double all)
+  Maviray.Pdf.PageBuilder Margin(double all, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.PageBuilder MarginBottom(double bottom)
+  Maviray.Pdf.PageBuilder MarginBottom(double bottom, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.PageBuilder MarginHorizontal(double horizontal)
+  Maviray.Pdf.PageBuilder MarginHorizontal(double horizontal, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.PageBuilder MarginLeft(double left)
+  Maviray.Pdf.PageBuilder MarginLeft(double left, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.PageBuilder MarginRight(double right)
+  Maviray.Pdf.PageBuilder MarginRight(double right, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.PageBuilder MarginTop(double top)
+  Maviray.Pdf.PageBuilder MarginTop(double top, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.PageBuilder MarginVertical(double vertical)
+  Maviray.Pdf.PageBuilder MarginVertical(double vertical, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.PageBuilder Size(Maviray.Pdf.PageSize size)
+  Maviray.Pdf.PageBuilder Size(double width, double height, Maviray.Pdf.Unit unit = Maviray.Pdf.Unit.Point)
+readonly struct Maviray.Pdf.PageSize
+  Maviray.Pdf.PageSize Landscape()
+  double Height { get; }
+  double Width { get; }
+  static Maviray.Pdf.PageSize A3 { get; }
+  static Maviray.Pdf.PageSize A4 { get; }
+  static Maviray.Pdf.PageSize A5 { get; }
+  static Maviray.Pdf.PageSize Legal { get; }
+  static Maviray.Pdf.PageSize Letter { get; }
+sealed class Maviray.Pdf.RowBuilder
+  Maviray.Pdf.IContainer Auto()
+  Maviray.Pdf.IContainer Fixed(double width)
+  Maviray.Pdf.IContainer Fixed(double width, Maviray.Pdf.Unit unit)
+  Maviray.Pdf.IContainer Flex(double weight = 1)
+  Maviray.Pdf.RowBuilder Spacing(double spacing)
+  Maviray.Pdf.RowBuilder Spacing(double spacing, Maviray.Pdf.Unit unit)
+sealed class Maviray.Pdf.SettingsBuilder
+  Maviray.Pdf.SettingsBuilder Compression(System.IO.Compression.CompressionLevel level)
+  Maviray.Pdf.SettingsBuilder Deterministic(bool value = true)
+  Maviray.Pdf.SettingsBuilder Fonts(Maviray.Pdf.FontRegistry registry)
+  Maviray.Pdf.SettingsBuilder OnDiagnostic(System.Action<Maviray.Pdf.Diagnostic> handler)
+sealed class Maviray.Pdf.TextBuilder
+  Maviray.Pdf.TextBuilder AlignCenter()
+  Maviray.Pdf.TextBuilder AlignLeft()
+  Maviray.Pdf.TextBuilder AlignRight()
+  Maviray.Pdf.TextSpanBuilder PageCount()
+  Maviray.Pdf.TextSpanBuilder PageNumber()
+  Maviray.Pdf.TextSpanBuilder Span(string text)
+sealed class Maviray.Pdf.TextSpanBuilder
+  Maviray.Pdf.TextSpanBuilder Bold()
+  Maviray.Pdf.TextSpanBuilder FontColor(Maviray.Pdf.Color color)
+  Maviray.Pdf.TextSpanBuilder FontFamily(string family)
+  Maviray.Pdf.TextSpanBuilder FontSize(double size)
+  Maviray.Pdf.TextSpanBuilder Italic(bool value = true)
+  Maviray.Pdf.TextSpanBuilder LetterSpacing(double em)
+  Maviray.Pdf.TextSpanBuilder LineHeight(double multiple)
+  Maviray.Pdf.TextSpanBuilder Strikethrough(bool value = true)
+  Maviray.Pdf.TextSpanBuilder Underline(bool value = true)
+  Maviray.Pdf.TextSpanBuilder Weight(Maviray.Pdf.FontWeight weight)
+sealed class Maviray.Pdf.TextStyle
+  .ctor()
+  Maviray.Pdf.TextStyle Bold()
+  Maviray.Pdf.TextStyle FontColor(Maviray.Pdf.Color color)
+  Maviray.Pdf.TextStyle FontFamily(string family)
+  Maviray.Pdf.TextStyle FontSize(double size)
+  Maviray.Pdf.TextStyle Italic(bool value = true)
+  Maviray.Pdf.TextStyle LetterSpacing(double em)
+  Maviray.Pdf.TextStyle LineHeight(double multiple)
+  Maviray.Pdf.TextStyle Strikethrough(bool value = true)
+  Maviray.Pdf.TextStyle Underline(bool value = true)
+  Maviray.Pdf.TextStyle Weight(Maviray.Pdf.FontWeight weight)
+enum Maviray.Pdf.Unit : int
+  Centimetre = 2
+  Inch = 3
+  Millimetre = 1
+  Point = 0
