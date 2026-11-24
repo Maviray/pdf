@@ -126,8 +126,8 @@ The names below are the public API of 0.1.0. A row marked *own* replaces a name 
 | Padding | `.Padding(..)`, `PaddingHorizontal`, `PaddingVertical`, `PaddingLeft`, `PaddingTop`, `PaddingRight`, `PaddingBottom` | |
 | Alignment | `.AlignLeft()`, `AlignCenter()`, `AlignRight()`, `AlignTop()`, `AlignMiddle()`, `AlignBottom()` | |
 | Size limits | `.Width(..)`, `MinWidth`, `MaxWidth`, `Height`, `MinHeight`, `MaxHeight` | |
-| Background | `.Background(Color)` | |
-| Border | `.Border(width, Color)`, `BorderLeft`, `BorderTop`, `BorderRight`, `BorderBottom` | |
+| Background | `.Background(Color, bool stretch = true)` | |
+| Border | `.Border(width, Color)`, `BorderLeft`, `BorderTop`, `BorderRight`, `BorderBottom`, each with `bool stretch = true` | |
 | Rule | `.HorizontalLine(thickness, Color)`, `.VerticalLine(thickness, Color)` | *own*, for `LineHorizontal` and `LineVertical` |
 | Page break | `.PageBreak()` | |
 | Text | `.Text(string)` returns a `TextSpanBuilder` for its style. `.Text(t => { t.Span(..).Bold(); t.PageNumber(); t.PageCount(); t.AlignCenter(); })` | *own*: `PageNumber` and `PageCount`, for `CurrentPageNumber` and `TotalPages` |
@@ -211,13 +211,15 @@ For example: `Page 3 > Content > Column > Item 2 > Row > Fixed 1 > Text: a chara
 | Align | The child is measured at the space | The child is drawn at its measured size, placed left, centre or right, and top, middle or bottom. On a `Partial`, it stays at the top |
 | Width, MinWidth, MaxWidth | Clamp the child's width: `Width(w)` gives exactly w, and is `None` when the space is narrower | As measured |
 | Height, MinHeight, MaxHeight | `MaxHeight(h)` gives the child at most h on each page. `MinHeight(h)` makes each page's part at least h tall, and is `None` when less than h is left. `Height(h)` is both | As measured |
-| Background | As its child | Fills the space it is drawn in, the width given and the child's height, then draws the child, on every page part |
-| Border | The child gets the space minus the border widths, so the border takes space, as in CSS | Draws the child, then fills each side's band in the colour |
+| Background | As its child | Fills the space it is drawn in, the width and the height given, then draws the child, on every page part. Without `stretch`, the height is the child's |
+| Border | The child gets the space minus the border widths, so the border takes space, as in CSS | Draws the child, then fills each side's band of the space it is drawn in, in the colour. Without `stretch`, the box is the child's height plus the top and bottom widths |
 | Horizontal line | Width 0, height the thickness | Fills the width given |
 | Vertical line | Width the thickness, height 0 | Fills the height given, which in a Row is the row's height |
 | Page break | `Partial` with no size the first time, so the content ends on this page. Then `Full` with no size | Marks itself as passed, which counts as progress |
 
 At infinite width, a Row measures its `Flex` items like `Auto` items, a horizontal line has width 0, and `Width(w)` gives w.
+
+*Amended 2026-11-24, during P1.10, by the maintainer's decision:* a background or border fills the height it is drawn at, so the cells of a Row line up to the row's height rather than coming out ragged. In a Column item or under an alignment that height is the child's own, so nothing changes there. `stretch: false` keeps the effect on the child's height, as first written. On a page's top-level content, a stretching background fills the whole content area.
 
 ### L-07 Text element
 

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Maviray.Pdf.Fonts.Default</PackageId>
+    <Description>The Noto Sans fonts for Maviray.Pdf, compiled in: call FontRegistry.Default.RegisterNotoSans(), and documents can use them with no font files of their own.</Description>
+    <PackageTags>pdf;fonts;noto-sans;maviray</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Packing turns this into a dependency on the Maviray.Pdf package of the same version (spec L-15). -->
+    <ProjectReference Include="..\Maviray.Pdf\Maviray.Pdf.csproj" />
+  </ItemGroup>
+
+  <!--
+    Pins that dependency to exactly this package's version, [X], instead of NuGet's "X or later". Both packages ship
+    together at one version, and before 1.0.0 any release may change the API RegisterNotoSans calls, which would only
+    fail at run time. NuGet's pack targets have no public setting for a project reference's range, so this rewrites the
+    versions they collect; PackageTests fails if a later SDK stops honouring it.
+  -->
+  <Target Name="PinMavirayPdfVersion" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <!-- The four Noto Sans faces (spec F-12), embedded under their file names. -->
+    <EmbeddedResource Include="Fonts\NotoSans-*.ttf" LogicalName="%(Filename)%(Extension)" />
+    <!-- The fonts' licence, which travels with them (SIL Open Font License, condition 2), at the package's root. A folder
+         as the package path would keep the item's own folder, Fonts/. -->
+    <None Update="Fonts\OFL.txt" Pack="true" PackagePath="OFL.txt" />
+  </ItemGroup>
+
+</Project>

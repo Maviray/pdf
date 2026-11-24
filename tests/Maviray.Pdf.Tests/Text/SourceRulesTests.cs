@@ -14,6 +14,21 @@ public sealed class SourceRulesTests
 
     private static readonly Regex CultureTypes = new(@"\b(CultureInfo|CompareInfo|TextInfo)\b", RegexOptions.CultureInvariant);
 
+    private static readonly Regex PartialType = new(@"\bpartial\s+(class|struct|record|interface)\b", RegexOptions.CultureInvariant);
+
+    // CONTRIBUTING.md: one type per file, and no partial classes, in the tests as in the library.
+    [Fact]
+    public void NoSourceDeclaresAPartialType()
+    {
+        var (scannedSrc, matchesSrc) = Scan("src", PartialType.IsMatch);
+        var (scannedTests, matchesTests) = Scan("tests", PartialType.IsMatch);
+
+        Assert.Contains("src/Maviray.Pdf/Text/TextNormalizer.cs", scannedSrc);
+        Assert.Contains("tests/Maviray.Pdf.Tests/Validation/Poppler.cs", scannedTests);
+        var matches = matchesSrc.Concat(matchesTests).ToList();
+        Assert.True(matches.Count == 0, "A partial type:\n" + string.Join("\n", matches));
+    }
+
     [Fact]
     public void NothingInSrcCallsDotNetNormalization()
     {
