@@ -58,3 +58,4 @@ The branch `feature/33-text-gate` is stacked on `feature/32-text-layout` (PR #42
     - T-07's soft-hyphen row and T-09's "No hyphen is drawn at such a break" read differently for a whole first segment. The engine and the check follow T-09, the more specific rule.
     - The Turkish, Russian and Greek sentences are only in Regular. T-15's "in three styles" is page-wide, and the fonts gate draws those scripts in all four styles.
     - The ToUnicode entries for U+00A0 and U+202F are checked by hand only. P1.3's CMap tests cover any code point, and the writer special-cases neither.
+- **CI** on `c27b8da`, [run 45346056945](https://github.com/Maviray/pdf/actions/runs/45346056945): 813 of 813 tests passed, and without ICU the text tests passed 302 of 302. The gate ran there with Ubuntu's poppler and qpdf, which match the local Windows builds on every check.
