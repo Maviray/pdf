@@ -19,7 +19,7 @@ internal sealed class HorizontalLine : Element
         _color = color;
     }
 
-    public override Measurement Measure(Size available, PageContext page) => _thickness <= available.Height
+    public override Measurement Measure(Size available, PageContext page) => LayoutTolerance.Fits(_thickness, available.Height)
         ? Measurement.Full(new Size(0, _thickness), this)
         : Measurement.None(this, available, new Size(0, _thickness));
 

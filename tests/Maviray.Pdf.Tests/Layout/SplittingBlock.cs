@@ -42,7 +42,7 @@ internal sealed class SplittingBlock(string name, double width, double lineHeigh
     public override void Reset() => _cursor = 0;
 
     /// <summary>How many of the remaining lines fit, with a tolerance for the sums of line heights.</summary>
-    private int Fitting(Size available) => width > available.Width
+    private int Fitting(Size available) => !LayoutTolerance.Fits(width, available.Width)
         ? 0
-        : Math.Min(lines - _cursor, (int)Math.Floor((available.Height / lineHeight) + 1e-9));
+        : Math.Min(lines - _cursor, (int)Math.Floor((available.Height + LayoutTolerance.Points) / lineHeight));
 }

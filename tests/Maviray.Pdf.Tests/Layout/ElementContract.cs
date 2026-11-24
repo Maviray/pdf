@@ -74,6 +74,14 @@ internal static class ElementContract
         var measurement = element.Measure(size, page);
         Assert.True(Same(measurement, element.Measure(size, page)), $"{element.Path} at an infinite width measured differently twice.");
         Assert.True(double.IsFinite(measurement.Size.Width), $"{element.Path} at an infinite width measured {measurement.Size}.");
+        if (measurement.Fit != Fit.None)
+        {
+            // A Row gives an Auto item the width it measured at infinity, so the item must fit there the same way.
+            var atWidth = element.Measure(new Size(measurement.Size.Width, size.Height), page);
+            Assert.True(
+                atWidth.Fit == measurement.Fit && atWidth.Size == measurement.Size,
+                $"{element.Path} measured {Show(measurement)} at an infinite width, and {Show(atWidth)} at that width.");
+        }
     }
 
     private static bool Same(Measurement a, Measurement b) =>

@@ -75,6 +75,57 @@ public sealed class RowTests
         Assert.All(canvas.Pages[1].Calls, call => Assert.Equal(110, call.X));
     }
 
+    // At an infinite width, a Row of flex items reports the width at which each item gets its own width at least.
+    [Fact]
+    public void AnAutoRowOfFlexItemsFitsAtTheWidthItReports()
+    {
+        var inner = new Row([Flex(1, new FixedBlock("Wide", 100, 10, Blue)), Flex(1, new FixedBlock("Narrow", 20, 10, Blue))], 0);
+        var row = new Row([Auto(inner), Flex(1, Probe(10, 10))], 0);
+
+        var atInfinity = inner.Measure(new Size(double.PositiveInfinity, 100), Page());
+        var canvas = new RecordingCanvas();
+        LayoutEngine.Generate([new PageSet(595, 842, new Margins(50, 50, 50, 50), null, null, row, null)], canvas);
+
+        Assert.Equal(200, atInfinity.Size.Width);
+        Assert.Single(canvas.Pages);
+    }
+
+    // An unfinished auto item is measured afresh on every page, so one that needs more width later gets it.
+    [Fact]
+    public void AnUnfinishedAutoItemMayWidenOnALaterPage()
+    {
+        var auto = new Column([new FixedBlock("Tall", 50, 700, Blue), new FixedBlock("Wider", 100, 100, Blue)], 0);
+        var row = new Row([Auto(auto), Flex(1, new SplittingBlock("Long", 100, 10, 100, Blue))], 0);
+        var canvas = new RecordingCanvas();
+
+        LayoutEngine.Generate([new PageSet(595, 842, new Margins(50, 50, 50, 50), null, null, row, null)], canvas);
+
+        Assert.Equal(2, canvas.Pages.Count);
+    }
+
+    // Drawn at its measured width, as an Align draws it, a Row of auto items keeps its places when one finishes.
+    [Fact]
+    public void AFinishedAutoItemKeepsItsWidthUnderAnAlign()
+    {
+        var row = new Row([Auto(new SplittingBlock("Short", 60, 10, 3, Blue)), Auto(new SplittingBlock("Long", 100, 10, 100, Blue))], 5);
+        var canvas = new RecordingCanvas();
+
+        LayoutEngine.Generate([new PageSet(595, 842, new Margins(50, 50, 50, 50), null, null, new Align(HorizontalAlignment.Left, null, row), null)], canvas);
+
+        Assert.All(canvas.Pages[1].Calls, call => Assert.Equal(115, call.X));
+    }
+
+    // At a page's foot an auto item that fits nothing makes the Row None, rather than being measured at width 0.
+    [Fact]
+    public void AnAutoItemThatFitsNothingMakesTheRowNone()
+    {
+        var row = new Row([Auto(new NarrowThrower("Text", 50, 100)), Flex(1, Probe(10, 10))], 0);
+
+        var measurement = row.Measure(new Size(495, 50), Page());
+
+        Assert.Equal((Fit.None, "Row > Auto 1 > Text"), (measurement.Fit, measurement.Source.Path));
+    }
+
     [Fact]
     public void ItIsNoneIfAnyItemIsAndPartialIfAnyItemIs()
     {
@@ -106,6 +157,14 @@ public sealed class RowTests
 
         Assert.Equal((Fit.Full, new Size(165, 10)), (measurement.Fit, measurement.Size));
     }
+
+    [Fact]
+    public void AnEmptyRowKeepsTheContract() => ElementContract.Check(() => new Row([], 0), new Size(100, 100), new Size(0, 0));
+
+    [Fact]
+    public void ARowOfAutoItemsKeepsTheContract() => ElementContract.Check(
+        () => new Row([Auto(new SplittingBlock("Short", 60, 10, 3, Blue)), Auto(new SplittingBlock("Long", 100, 10, 100, Blue))], 5),
+        new Size(495, 50.5), new Size(300.25, 742));
 
     // Below 68 points the fixed and auto items and the spacing can never fit, and the Row throws, so no smaller size.
     [Fact]

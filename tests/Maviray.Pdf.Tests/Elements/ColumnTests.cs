@@ -93,6 +93,9 @@ public sealed class ColumnTests
             5),
         new Size(500, 700), new Size(100, 250), new Size(50, 5), new Size(0, 0));
 
+    [Fact]
+    public void AnEmptyColumnKeepsTheContract() => ElementContract.Check(() => new Column([], 0), new Size(100, 100), new Size(0, 0));
+
     [Theory]
     [InlineData(-1)]
     [InlineData(double.NaN)]

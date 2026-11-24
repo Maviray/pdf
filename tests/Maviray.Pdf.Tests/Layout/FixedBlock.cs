@@ -18,7 +18,7 @@ internal sealed class FixedBlock(string name, double width, double height, RgbCo
     public RgbColor Color { get; } = color;
 
     public override Measurement Measure(Size available, PageContext page) =>
-        Width <= available.Width && Height <= available.Height
+        LayoutTolerance.Fits(Width, available.Width) && LayoutTolerance.Fits(Height, available.Height)
             ? Measurement.Full(new Size(Width, Height), this)
             : Measurement.None(this, available, new Size(Width, Height));
 

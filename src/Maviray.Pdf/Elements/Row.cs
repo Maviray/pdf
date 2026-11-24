@@ -8,26 +8,25 @@ namespace Maviray.Pdf.Elements;
 /// <c>Flex 2</c> (L-05).
 /// <list type="bullet">
 /// <item>Widths in order: fixed ones, then auto ones (the item measured at an infinite width), then flex shares of
-/// what is left, with the spacing between items. At an infinite width, flex items are measured like auto ones.</item>
+/// what is left, with the spacing between items. An auto item that fits nothing there makes the Row
+/// <see cref="Fit.None"/>.</item>
+/// <item>At an infinite width, flex items are measured like auto ones, and the Row reports the width at which each
+/// flex share is at least its item's own width, so it fits where it says (P1.10 review).</item>
 /// <item>Its height is the tallest unfinished item's. It is <see cref="Fit.None"/> if any item is, and
 /// <see cref="Fit.Partial"/> if any is.</item>
 /// <item>Every unfinished item draws at its width and the row's height. An item that finished on an earlier page
-/// draws nothing, and its height doesn't count.</item>
-/// <item>The widths are fixed at the row's first draw and kept on later pages while its width stays the same, so its
-/// items keep their places across pages (P1.10 log, ruling).</item>
+/// draws nothing, and its height doesn't count. An auto item keeps the width it finished at, so the items after it
+/// keep their places.</item>
 /// </list>
 /// </summary>
 internal sealed class Row : Element
 {
-    private const double Tolerance = 1e-9;
-
     private readonly RowItemKind[] _kinds;
     private readonly double[] _values;
     private readonly Slot[] _items;
     private readonly bool[] _finished;
+    private readonly double[] _finishedWidths;
     private readonly double _spacing;
-    private double[]? _drawnWidths;
-    private double _drawnFor;
 
     /// <param name="items">The items, in order.</param>
     /// <param name="spacing">The space in points between two items, zero or more and finite.</param>
@@ -63,6 +62,7 @@ internal sealed class Row : Element
         }
 
         _finished = new bool[list.Length];
+        _finishedWidths = new double[list.Length];
         _spacing = spacing;
     }
 
@@ -70,7 +70,11 @@ internal sealed class Row : Element
 
     public override Measurement Measure(Size available, PageContext page)
     {
-        var widths = Widths(available, page);
+        if (Widths(available, page, out var widths) is { } none)
+        {
+            return none;
+        }
+
         var height = 0.0;
         Measurement? split = null;
         for (var i = 0; i < _items.Length; i++)
@@ -100,10 +104,19 @@ internal sealed class Row : Element
 
     public override bool Draw(Size available, ICanvas canvas, PageContext page)
     {
-        var height = Measure(available, page).Size.Height;
-        var widths = Widths(available, page);
-        _drawnWidths = widths;
-        _drawnFor = available.Width;
+        if (Widths(available, page, out var widths) is not null)
+        {
+            return false;
+        }
+
+        var height = 0.0;
+        for (var i = 0; i < _items.Length; i++)
+        {
+            if (!_finished[i])
+            {
+                height = Math.Max(height, _items[i].Measure(new Size(widths[i], available.Height), page).Size.Height);
+            }
+        }
 
         var advanced = false;
         var x = 0.0;
@@ -111,13 +124,16 @@ internal sealed class Row : Element
         {
             if (!_finished[i])
             {
-                var fit = _items[i].Measure(new Size(widths[i], available.Height), page).Fit;
+                // The item is drawn at the row's height, so whether it finishes is decided at that height.
+                var space = new Size(widths[i], height);
+                var fit = _items[i].Measure(space, page).Fit;
                 canvas.PushOffset(x, 0);
-                advanced |= _items[i].Draw(new Size(widths[i], height), canvas, page);
+                advanced |= _items[i].Draw(space, canvas, page);
                 canvas.PopOffset();
                 if (fit == Fit.Full)
                 {
                     _finished[i] = true;
+                    _finishedWidths[i] = widths[i];
                     advanced = true;
                 }
             }
@@ -125,51 +141,79 @@ internal sealed class Row : Element
             x += widths[i] + _spacing;
         }
 
-        return advanced;
+        return advanced || Array.TrueForAll(_finished, finished => finished);
     }
 
     public override void Reset()
     {
         Array.Clear(_finished);
-        _drawnWidths = null;
+        Array.Clear(_finishedWidths);
         foreach (var item in _items)
         {
             item.Reset();
         }
     }
 
-    /// <summary>Each item's width, or the widths of the row's first draw while its width is the same.</summary>
+    /// <summary>
+    /// Each item's width. Returns the measurement of an auto item, or of a flex item at an infinite width, that fits
+    /// nothing in the available height, and null otherwise. Each such item is measured once.
+    /// </summary>
     /// <exception cref="LayoutException">The fixed and auto items and the spacing need more than the width.</exception>
-    private double[] Widths(Size available, PageContext page)
+    private Measurement? Widths(Size available, PageContext page, out double[] widths)
     {
-        if (_drawnWidths is not null && _drawnFor == available.Width)
-        {
-            return _drawnWidths;
-        }
-
         var infinite = double.IsPositiveInfinity(available.Width);
-        var widths = new double[_items.Length];
+        widths = new double[_items.Length];
         var used = _spacing * Math.Max(0, _items.Length - 1);
         var weights = 0.0;
+        var widthPerWeight = 0.0;
         for (var i = 0; i < _items.Length; i++)
         {
-            switch (_kinds[i])
+            var kind = _kinds[i];
+            if (kind == RowItemKind.Fixed)
             {
-                case RowItemKind.Fixed:
-                    widths[i] = _values[i];
-                    used += widths[i];
-                    break;
-                case RowItemKind.Flex when !infinite:
-                    weights += _values[i];
-                    break;
-                default:
-                    widths[i] = _items[i].Measure(new Size(double.PositiveInfinity, available.Height), page).Size.Width;
-                    used += widths[i];
-                    break;
+                widths[i] = _values[i];
+                used += widths[i];
+                continue;
+            }
+
+            if (kind == RowItemKind.Flex && !infinite)
+            {
+                weights += _values[i];
+                continue;
+            }
+
+            if (kind == RowItemKind.Auto && _finished[i])
+            {
+                widths[i] = _finishedWidths[i];
+                used += widths[i];
+                continue;
+            }
+
+            var measurement = _items[i].Measure(new Size(double.PositiveInfinity, available.Height), page);
+            if (measurement.Fit == Fit.None)
+            {
+                return measurement;
+            }
+
+            if (kind == RowItemKind.Flex)
+            {
+                weights += _values[i];
+                widthPerWeight = Math.Max(widthPerWeight, measurement.Size.Width / _values[i]);
+            }
+            else
+            {
+                widths[i] = measurement.Size.Width;
+                used += widths[i];
             }
         }
 
-        if (!infinite && used > available.Width + Tolerance)
+        if (infinite)
+        {
+            SetFlexWidths(widths, widthPerWeight * weights, weights);
+            return null;
+        }
+
+        if (!LayoutTolerance.Fits(used, available.Width))
         {
             throw LayoutErrors.Error(
                 page,
@@ -178,19 +222,19 @@ internal sealed class Row : Element
                 available);
         }
 
-        if (weights > 0)
+        SetFlexWidths(widths, Math.Max(0, available.Width - used), weights);
+        return null;
+    }
+
+    private void SetFlexWidths(double[] widths, double left, double weights)
+    {
+        for (var i = 0; i < _items.Length; i++)
         {
-            var left = Math.Max(0, available.Width - used);
-            for (var i = 0; i < _items.Length; i++)
+            if (_kinds[i] == RowItemKind.Flex)
             {
-                if (_kinds[i] == RowItemKind.Flex)
-                {
-                    widths[i] = left * _values[i] / weights;
-                }
+                widths[i] = left * _values[i] / weights;
             }
         }
-
-        return widths;
     }
 
     private double Total(double[] widths) => widths.Sum() + (_spacing * Math.Max(0, widths.Length - 1));

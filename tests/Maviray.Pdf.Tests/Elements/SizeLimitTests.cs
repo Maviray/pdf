@@ -24,6 +24,25 @@ public sealed class SizeLimitTests
     }
 
     [Fact]
+    public void WidthWithAWiderChildGivesTheChildW()
+    {
+        var measurement = SizeLimit.Width(100, new FixedBlock("Wide", 150, 20, Blue)).Measure(Space, Page());
+
+        Assert.Equal((Fit.None, "Width > Wide"), (measurement.Fit, measurement.Source.Path));
+    }
+
+    [Fact]
+    public void MinHeightRaisesEachPagePart()
+    {
+        // 80 lines of 10: 74 on page 1, and the last 6 on page 2, raised to 100, so the block after starts 100 down.
+        var column = new Column([SizeLimit.MinHeight(100, new SplittingBlock("Lines", 100, 10, 80, Blue)), new FixedBlock("After", 200, 20, Blue)], 0);
+
+        var canvas = Generate(column);
+
+        Assert.Equal(150, Assert.Single(canvas.Pages[1].Calls, call => call.Width == 200).Y);
+    }
+
+    [Fact]
     public void MaxWidthCapsTheChild()
     {
         var (measurement, calls) = ElementCanvas.Draw(SizeLimit.MaxWidth(100, Probe(50, 20)), Space);

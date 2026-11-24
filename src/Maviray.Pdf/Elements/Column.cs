@@ -37,72 +37,12 @@ internal sealed class Column : Element
 
     public override bool ShowsPageCount => _items.Any(item => item.ShowsPageCount);
 
-    public override Measurement Measure(Size available, PageContext page)
-    {
-        var width = 0.0;
-        var height = 0.0;
-        var tookHeight = false;
-        for (var i = _cursor; i < _items.Length; i++)
-        {
-            var gap = tookHeight ? _spacing : 0;
-            var measurement = _items[i].Measure(Below(available, height + gap), page);
-            switch (measurement.Fit)
-            {
-                case Fit.Full:
-                    width = Math.Max(width, measurement.Size.Width);
-                    if (measurement.Size.Height > 0)
-                    {
-                        height += gap + measurement.Size.Height;
-                        tookHeight = true;
-                    }
-
-                    break;
-                case Fit.Partial:
-                    var total = measurement.Size.Height > 0 ? height + gap + measurement.Size.Height : height;
-                    return measurement.WithSize(new Size(Math.Max(width, measurement.Size.Width), total));
-                default:
-                    return i == _cursor ? measurement : Measurement.Partial(new Size(width, height), this, available);
-            }
-        }
-
-        return Measurement.Full(new Size(width, height), this);
-    }
+    public override Measurement Measure(Size available, PageContext page) => Run(available, page, null, out _);
 
     public override bool Draw(Size available, ICanvas canvas, PageContext page)
     {
-        var advanced = false;
-        var height = 0.0;
-        var tookHeight = false;
-        while (_cursor < _items.Length)
-        {
-            var gap = tookHeight ? _spacing : 0;
-            var item = _items[_cursor];
-            var measurement = item.Measure(Below(available, height + gap), page);
-            if (measurement.Fit == Fit.None)
-            {
-                break;
-            }
-
-            var top = measurement.Size.Height > 0 ? height + gap : height;
-            canvas.PushOffset(0, top);
-            advanced |= item.Draw(new Size(available.Width, measurement.Size.Height), canvas, page);
-            canvas.PopOffset();
-            if (measurement.Size.Height > 0)
-            {
-                height = top + measurement.Size.Height;
-                tookHeight = true;
-            }
-
-            if (measurement.Fit == Fit.Partial)
-            {
-                break;
-            }
-
-            _cursor++;
-            advanced = true;
-        }
-
-        return advanced;
+        _ = Run(available, page, canvas, out var advanced);
+        return advanced || _cursor == _items.Length;
     }
 
     public override void Reset()
@@ -112,6 +52,69 @@ internal sealed class Column : Element
         {
             item.Reset();
         }
+    }
+
+    /// <summary>
+    /// The one loop that both measures and, with a <paramref name="canvas"/>, draws, so the two add up the same lengths
+    /// in the same order (P1.10 review). Drawing moves the cursor past the items that finished.
+    /// </summary>
+    private Measurement Run(Size available, PageContext page, ICanvas? canvas, out bool advanced)
+    {
+        advanced = false;
+        var width = 0.0;
+        var height = 0.0;
+        var tookHeight = false;
+        var i = _cursor;
+        Measurement result;
+        while (true)
+        {
+            if (i == _items.Length)
+            {
+                result = Measurement.Full(new Size(width, height), this);
+                break;
+            }
+
+            var top = tookHeight ? height + _spacing : height;
+            var item = _items[i];
+            var measurement = item.Measure(Below(available, top), page);
+            if (measurement.Fit == Fit.None)
+            {
+                result = i == _cursor ? measurement : Measurement.Partial(new Size(width, height), this, available);
+                break;
+            }
+
+            var takesHeight = measurement.Size.Height > 0;
+            var itemTop = takesHeight ? top : height;
+            if (canvas is not null)
+            {
+                canvas.PushOffset(0, itemTop);
+                advanced |= item.Draw(new Size(available.Width, measurement.Size.Height), canvas, page);
+                canvas.PopOffset();
+            }
+
+            width = Math.Max(width, measurement.Size.Width);
+            if (takesHeight)
+            {
+                height = itemTop + measurement.Size.Height;
+                tookHeight = true;
+            }
+
+            if (measurement.Fit == Fit.Partial)
+            {
+                result = measurement.WithSize(new Size(width, height));
+                break;
+            }
+
+            i++;
+        }
+
+        if (canvas is not null && i > _cursor)
+        {
+            _cursor = i;
+            advanced = true;
+        }
+
+        return result;
     }
 
     /// <summary>The space left below <paramref name="used"/> points, never below 0.</summary>

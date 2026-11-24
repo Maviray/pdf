@@ -35,13 +35,12 @@ internal sealed class Padding : Element
 
     public override Measurement Measure(Size available, PageContext page)
     {
-        var inner = Inner(available);
-        if (inner.Width < 0 || inner.Height < 0)
+        if (available.Width - _left - _right < -LayoutTolerance.Points || available.Height - _top - _bottom < -LayoutTolerance.Points)
         {
             return Measurement.None(this, available);
         }
 
-        var measurement = _child.Measure(inner, page);
+        var measurement = _child.Measure(Inner(available), page);
         if (measurement.Fit == Fit.None)
         {
             return measurement;
@@ -66,5 +65,5 @@ internal sealed class Padding : Element
         ? value
         : throw new ArgumentOutOfRangeException(paramName, value, "The length must be zero or more points, and finite.");
 
-    private Size Inner(Size available) => new(available.Width - _left - _right, available.Height - _top - _bottom);
+    private Size Inner(Size available) => new(Math.Max(0, available.Width - _left - _right), Math.Max(0, available.Height - _top - _bottom));
 }

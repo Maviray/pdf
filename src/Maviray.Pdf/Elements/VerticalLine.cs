@@ -22,7 +22,7 @@ internal sealed class VerticalLine : Element
         _color = color;
     }
 
-    public override Measurement Measure(Size available, PageContext page) => _thickness <= available.Width
+    public override Measurement Measure(Size available, PageContext page) => LayoutTolerance.Fits(_thickness, available.Width)
         ? Measurement.Full(new Size(_thickness, 0), this)
         : Measurement.None(this, available, new Size(_thickness, 0));
 

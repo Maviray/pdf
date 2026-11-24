@@ -11,7 +11,7 @@ namespace Maviray.Pdf.Tests.Layout;
 internal sealed class SpaceProbe(string name, double width, double height, RgbColor color) : Element(name)
 {
     public override Measurement Measure(Size available, PageContext page) =>
-        width <= available.Width && height <= available.Height
+        LayoutTolerance.Fits(width, available.Width) && LayoutTolerance.Fits(height, available.Height)
             ? Measurement.Full(new Size(width, height), this)
             : Measurement.None(this, available, new Size(width, height));
 

@@ -16,8 +16,6 @@ namespace Maviray.Pdf.Elements;
 /// </summary>
 internal sealed class SizeLimit : Element
 {
-    private const double Tolerance = 1e-9;
-
     private readonly double _minWidth;
     private readonly double _maxWidth;
     private readonly double _minHeight;
@@ -56,7 +54,7 @@ internal sealed class SizeLimit : Element
 
     public override Measurement Measure(Size available, PageContext page)
     {
-        if (available.Width < _minWidth - Tolerance || available.Height < _minHeight - Tolerance)
+        if (!LayoutTolerance.Fits(_minWidth, available.Width) || !LayoutTolerance.Fits(_minHeight, available.Height))
         {
             return Measurement.None(this, available);
         }

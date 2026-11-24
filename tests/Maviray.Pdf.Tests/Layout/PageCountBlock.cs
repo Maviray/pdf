@@ -21,7 +21,7 @@ internal sealed class PageCountBlock(string name, Func<int, double> heightForCou
     public override Measurement Measure(Size available, PageContext page)
     {
         var size = new Size(10, heightForCount(page.PageCount));
-        return size.Width <= available.Width && size.Height <= available.Height ? Measurement.Full(size, this) : Measurement.None(this, available, size);
+        return LayoutTolerance.Fits(size.Width, available.Width) && LayoutTolerance.Fits(size.Height, available.Height) ? Measurement.Full(size, this) : Measurement.None(this, available, size);
     }
 
     public override bool Draw(Size available, ICanvas canvas, PageContext page)
