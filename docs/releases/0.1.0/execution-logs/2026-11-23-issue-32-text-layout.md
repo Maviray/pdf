@@ -59,3 +59,8 @@ The branch `feature/32-text-layout` is stacked on `feature/31-line-breaking` (PR
     - adjacent decorated spans with letter spacing leave a gap of that spacing between their rectangles, as T-11 is written;
     - `GlyphsAt` returns an `ArraySegment`, which `IList` can write through, and the layout's lists are `List<T>` behind `IReadOnlyList`;
     - small nits: the fallback's integer division (0.7998 em at 2,048 units), `TJ` writing 0 for an advance that rounds to 0, and no bounds check in `IsClusterStart`.
+
+## 2026-11-24
+
+- **CI** on `d0f698b`, [run 45220173024](https://github.com/Maviray/pdf/actions/runs/45220173024): 799 of 799 tests passed, and without ICU the text tests passed 292 of 292. qpdf and the other validators ran there, which are skipped locally.
+- **#40 merged** into develop as `17b2a8d`. This branch took it through `feature/31-line-breaking` with a merge whose only change is the release index row for #30.
