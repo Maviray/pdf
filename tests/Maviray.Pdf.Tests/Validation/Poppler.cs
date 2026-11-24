@@ -4,8 +4,10 @@ using System.Text.RegularExpressions;
 namespace Maviray.Pdf.Tests.Validation;
 
 /// <summary>Renders and reads generated PDFs with poppler, a PDF reader we didn't write (spec D-11).</summary>
-internal static partial class Poppler
+internal static class Poppler
 {
+    private static readonly Regex MissingDisplayFont = new("^Syntax Error: No display font for '[^']*'$", RegexOptions.CultureInvariant);
+
     /// <summary>
     /// Renders every page at 72 dpi, so one point is one pixel, next to the PDF as <c>&lt;name&gt;-&lt;page&gt;.ppm</c>.
     /// Fails on a nonzero exit code or any of <see cref="Diagnostics"/>, because poppler reports syntax errors on
@@ -105,11 +107,8 @@ internal static partial class Poppler
     public static IReadOnlyList<string> Diagnostics(string standardError) => standardError
         .Split('\n')
         .Select(line => line.TrimEnd('\r'))
-        .Where(line => line.Length > 0 && !MissingDisplayFont().IsMatch(line))
+        .Where(line => line.Length > 0 && !MissingDisplayFont.IsMatch(line))
         .ToList();
-
-    [GeneratedRegex("^Syntax Error: No display font for '[^']*'$", RegexOptions.CultureInvariant)]
-    private static partial Regex MissingDisplayFont();
 
     private static PdfFontReport Report(string row, Dictionary<string, (int Start, int Length)> columns)
     {

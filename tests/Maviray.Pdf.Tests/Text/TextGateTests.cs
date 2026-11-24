@@ -98,6 +98,11 @@ public sealed class TextGateTests
         var layouts = paragraphs.Select(paragraph => PreparedParagraph.Prepare(paragraph.Paragraph).Fill(paragraph.Width)).ToArray();
         var tops = Tops(layouts);
         var expected = ExpectedLines.SelectMany(lines => lines).ToArray();
+
+        // The plan's positions, which the viewer checklist describes, so a change to the line heights can't move the
+        // page unseen.
+        Assert.Equal([36, 200, 424, 648, 756.8, 788.8], tops, (a, b) => Math.Abs(a - b) < 1e-9);
+        Assert.Equal(800.8, tops[^1] + layouts[^1].Height, 9);
         var file = Write(layouts, tops);
         var path = GeneratedFiles.Save(file);
         GeneratedFiles.SaveAs(Encoding.UTF8.GetBytes(string.Join('\n', expected) + "\n"), ".txt");
@@ -180,6 +185,57 @@ public sealed class TextGateTests
         });
         Assert.Equal(["NotoSans-Bold", "NotoSans-Italic", "NotoSans-Regular"], fonts.Select(font => font.Name[7..]).Order());
     }
+
+    // At the gate's widths each no-break sequence sits mid-line, where a breakable space of the same advance would give
+    // the same lines. At 100, 130 and 190 points they reach a line's end, and must stay whole. The same prose with
+    // breakable spaces of the same advance, U+0020 for U+00A0 and U+2009 for U+202F, does break inside one at these
+    // widths, so the widths can't miss the sequences.
+    [Fact]
+    public void NoBreakSpacesKeepTheirNeighboursOnOneLine()
+    {
+        string[] sequences = ["z.\u202FB.", "1.234,56\u00A0\u20AC", "20\u00A0\u20AC"];
+        double[] widths = [100, 130, 190];
+
+        var inside = widths.SelectMany(width => LineEndsInside(TextGateText.Prose, sequences, width)).ToList();
+        Assert.True(inside.Count == 0, string.Join("\n", inside));
+
+        var control = widths.SelectMany(width => LineEndsInside(Breakable(TextGateText.Prose), [.. sequences.Select(Breakable)], width)).ToList();
+        Assert.True(control.Count > 0, "With breakable spaces no line ends inside a sequence either, so these widths don't test the no-break spaces.");
+
+        // UAX #14 allows no break on either side of a no-break space (LB12, LB12a).
+        var breaks = LineBreaker.FindBreaks(TextGateText.Prose);
+        for (var i = 0; i < TextGateText.Prose.Length; i++)
+        {
+            if (TextGateText.Prose[i] is '\u00A0' or '\u202F')
+            {
+                Assert.Equal(LineBreakKind.None, breaks[i]);
+                Assert.Equal(LineBreakKind.None, breaks[i + 1]);
+            }
+        }
+    }
+
+    /// <summary>Each line end of the prose filled at <paramref name="width"/> that falls inside one of <paramref name="sequences"/>.</summary>
+    private static IEnumerable<string> LineEndsInside(string prose, string[] sequences, double width)
+    {
+        var layout = PreparedParagraph.Prepare(new Paragraph([new TextSpan(prose, new TextStyle(Regular, 10, TextGateText.LineHeight))])).Fill(width);
+        var text = layout.Source.Text;
+        foreach (var line in layout.Lines)
+        {
+            var end = line.Start + line.Length;
+            foreach (var sequence in sequences)
+            {
+                for (var at = text.IndexOf(sequence, StringComparison.Ordinal); at >= 0; at = text.IndexOf(sequence, at + 1, StringComparison.Ordinal))
+                {
+                    if (at < end && end < at + sequence.Length)
+                    {
+                        yield return $"At {width}: a line ends at {end}, inside \"{sequence}\" at {at}.";
+                    }
+                }
+            }
+        }
+    }
+
+    private static string Breakable(string text) => text.Replace('\u00A0', ' ').Replace('\u202F', '\u2009');
 
     /// <summary>The six paragraphs of the plan, in order, each with its width.</summary>
     private static (Paragraph Paragraph, double Width)[] Paragraphs()

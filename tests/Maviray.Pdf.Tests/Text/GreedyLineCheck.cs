@@ -12,7 +12,15 @@ namespace Maviray.Pdf.Tests.Text;
 /// </summary>
 /// <remarks>
 /// It handles what the text gate holds: mapped characters, spaces, tabs, soft hyphens and break characters. Any other
-/// control or format character is reported as outside the check, rather than measured by a guess.
+/// control or format character is reported as outside the check, rather than measured by a guess. Blind spots:
+/// <list type="bullet">
+/// <item>The fit test extends a line by its next segment only, as T-15 words it. Where a line can narrow as it grows,
+/// under negative letter spacing or after a soft hyphen wider than what follows it, T-09 can end the line at a later
+/// segment, and this check wouldn't see a line that stopped early. The gate has neither.</item>
+/// <item>A line that ends at a soft hyphen is measured with its hyphen. Where T-09 takes a whole first segment that
+/// fits only without the hyphen it would draw, the check reports that correct line as too wide. The gate has no such
+/// line.</item>
+/// </list>
 /// </remarks>
 internal static class GreedyLineCheck
 {

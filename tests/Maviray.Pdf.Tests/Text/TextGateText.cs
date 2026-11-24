@@ -36,7 +36,8 @@ internal static class TextGateText
     /// <summary>
     /// The mixed paragraph's 13 spans: bold, italic, a 14 pt span, underline, strikethrough, letter spacing of 0.5
     /// points, a line feed, then Turkish, Russian and Greek sentences. Each is Regular at 10 points unless it says
-    /// otherwise. At 220 points the underline ends one line, before a hanging space, and goes on at the next.
+    /// otherwise. At 220 points the underline ends one line, before a hanging space, and goes on at the next. The
+    /// letter-spaced span holds its following space, so a narrower fill hangs a letter-spaced space.
     /// </summary>
     public static IReadOnlyList<TextSpan> MixedSpans(TrueTypeFont regular, TrueTypeFont bold, TrueTypeFont italic)
     {
@@ -55,8 +56,8 @@ internal static class TextGateText
             new(" f\u00E4llig, ", Style(regular)),
             new("nicht bis zum 15.", Style(regular, strikethrough: true)),
             new(" Der Vermerk ", Style(regular)),
-            new("BEZAHLT", Style(regular, letterSpacing: 0.5)),
-            new(" folgt.\n", Style(regular)),
+            new("BEZAHLT ", Style(regular, letterSpacing: 0.5)),
+            new("folgt.\n", Style(regular)),
             new(
                 "Faturan\u0131z \u0130stanbul \u015Fubemize \u00F6denebilir. \u0421\u0447\u0451\u0442 \u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C\u043E \u043E\u043F\u043B\u0430\u0442\u0438\u0442\u044C \u0434\u043E 30 \u0434\u0435\u043A\u0430\u0431\u0440\u044F. " +
                 "\u03A4\u03BF \u03C4\u03B9\u03BC\u03BF\u03BB\u03CC\u03B3\u03B9\u03BF \u03B5\u03BE\u03BF\u03C6\u03BB\u03B5\u03AF\u03C4\u03B1\u03B9 \u03AD\u03C9\u03C2 \u03C4\u03B9\u03C2 30 \u0394\u03B5\u03BA\u03B5\u03BC\u03B2\u03C1\u03AF\u03BF\u03C5.",

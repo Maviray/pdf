@@ -67,7 +67,7 @@ The page is A4 in portrait and white.
   | 1 | German prose about an invoice, 13 lines, ragged on the right, in a column about 7.8 cm wide |
   | 2 | The same prose in 18 lines, each centred in a column about 5.6 cm wide |
   | 3 | The same 18 lines, each flush with the right edge of that column, about 8.2 cm from the page's left edge |
-  | 4 | Five lines in German, with a bold `Wichtig:`, an italic sentence, a larger `1.234,56 €`, an underlined `ist bis zum 30. Dezember`, a struck-through `nicht bis zum 15.` and a spaced-out `BEZAHLT`. After `folgt.` a new line starts, and three lines hold a Turkish, a Russian and a Greek sentence |
+  | 4 | Five lines in German, with a bold `Wichtig:`, an italic sentence, a larger `1.234,56 €`, an underlined `ist bis zum 30. Dezember`, a struck-through `nicht bis zum 15.` and a spaced-out `BEZAHLT`. After `folgt.` a new line starts, and a Turkish, a Russian and a Greek sentence run on across the last three lines |
   | 5 | `DE893704004` and, on the next line, `40532013000` |
   | 6 | `Köln, München` |
 
@@ -108,17 +108,17 @@ The page is A4 in portrait and white.
      ```
 
      It prints `Exact` when the text matches. Otherwise it prints each copied line as character codes, so a hyphen (U+002D) instead of the en dash (U+2013), or a no-break space, shows up.
-   - For the fonts file and the text file, the expected lines come from the file's `.txt`, so no character needs typing. Put that file's path in the first line:
+   - For the fonts file and the text file, the expected lines come from the file's `.txt`, so no character needs typing. Put the path of that `.txt` in the first line: `FontsGatePassesEveryValidator.txt` for the fonts file, and `TextGatePassesEveryCheck.txt` for the text file:
 
      ```powershell
-     $expected = @(Get-Content -Encoding UTF8 '<path>\FontsGatePassesEveryValidator.txt')
+     $expected = @(Get-Content -Encoding UTF8 '<path>\<name>.txt')
      $actual = @(Get-Clipboard | ForEach-Object TrimEnd | Where-Object { $_ })
      if ([string]::Equals(($actual -join "`n"), ($expected -join "`n"), [StringComparison]::Ordinal)) { 'Exact' }
      else { 0..([Math]::Max($expected.Count, $actual.Count) - 1) | Where-Object { -not [string]::Equals($expected[$_], $actual[$_], [StringComparison]::Ordinal) } | ForEach-Object { "Line $($_ + 1): $($actual[$_])"; (([string]$actual[$_]).ToCharArray() | ForEach-Object { 'U+{0:X4}' -f [int]$_ }) -join ' ' } }
      ```
 
      It prints `Exact` when every line matches, in order: 24 for the fonts file, 60 for the text file. Otherwise, for each line that differs, it prints the line number, the copied line and its character codes. A missing line shows as an empty copied line.
-   - The text file holds characters that viewers may paste differently: the no-break spaces U+00A0 and U+202F, and the U+00AD at the end of line 11. A viewer may paste such a space as a space (U+0020), or drop the U+00AD or paste it as a hyphen (U+002D). Such a difference is recorded in the notes, and it doesn't fail the file. Any other difference does.
+   - The text file holds characters that viewers may paste differently: the no-break spaces U+00A0 and U+202F, and the U+00AD at the end of line 11. A viewer may paste such a space as a space (U+0020), or drop the U+00AD or paste it as a hyphen (U+002D). A viewer that drops it may also join line 11 to line 12, so every later line shows as different, one line on. Such a difference is recorded in the notes, and it doesn't fail the file. Any other difference does.
    - Line breaks, blank lines and spaces at the end of a line don't count, because viewers paste them differently. Every character within each line must match.
 4. **Acrobat only: no repair.** Close the file. Acrobat must not ask whether to save changes, because asking means it repaired the file.
 

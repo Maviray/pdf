@@ -55,7 +55,31 @@ public sealed class GreedyLineCheckTests
 
         var problems = GreedyLineCheck.Problems(prepared.Fill(40), 200);
 
-        Assert.Contains(problems, problem => problem.StartsWith("Line 0 ", StringComparison.Ordinal) && problem.Contains("is cut", StringComparison.Ordinal));
+        Assert.Contains(problems, problem => problem.StartsWith("Line 0 ", StringComparison.Ordinal) && problem.Contains("but its first segment", StringComparison.Ordinal));
+    }
+
+    // No fill breaks a line where UAX #14 allows no break, so the layout is built by hand. Its widths are 0, which the
+    // check also reports; the test looks for the break.
+    [Fact]
+    public void ABreakThatIsNoOpportunityIsReported()
+    {
+        var prepared = PreparedParagraph.Prepare(new Paragraph([new TextSpan("Vielen Dank f\u00FCr Ihren", Style())]));
+        var layout = Layout(prepared, (0, 13), (13, prepared.Text.Length - 13));
+
+        var problems = GreedyLineCheck.Problems(layout, 220);
+
+        Assert.Contains(problems, problem => problem.StartsWith("Line 0 ", StringComparison.Ordinal) && problem.Contains("which is no break opportunity", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ARequiredBreakInsideALineIsReported()
+    {
+        var prepared = PreparedParagraph.Prepare(new Paragraph([new TextSpan("ab\ncd", Style())]));
+        var layout = Layout(prepared, (0, 5));
+
+        var problems = GreedyLineCheck.Problems(layout, 220);
+
+        Assert.Contains(problems, problem => problem.StartsWith("Line 0 ", StringComparison.Ordinal) && problem.Contains("holds a required break before its end, at 3", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -73,6 +97,13 @@ public sealed class GreedyLineCheckTests
     }
 
     private static TextStyle Style() => new(Regular, 10, TextGateText.LineHeight);
+
+    /// <summary>A layout of <paramref name="prepared"/> with the given line ranges, each 0 wide at offset 0, with no glyphs.</summary>
+    private static TextLayout Layout(PreparedParagraph prepared, params (int Start, int Length)[] ranges) => new(
+        prepared,
+        0,
+        0,
+        ranges.Select(range => new TextLine(range.Start, range.Length, 0, 0, 0, 12, 10, [], [])).ToList());
 
     private static TextSpan[] ProseSpans() => [new TextSpan(TextGateText.Prose, Style())];
 
