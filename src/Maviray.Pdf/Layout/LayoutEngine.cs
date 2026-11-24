@@ -94,18 +94,20 @@ internal static class LayoutEngine
         var content = set.Content.Measure(space, page);
         if (content.Fit == Fit.None)
         {
-            throw Error(page, content.Source, "it can never fit. The space is " + LayoutErrors.Size(space) + Needs(content) + ".", space);
+            throw Error(page, content, "it can never fit. The space is " + LayoutErrors.Size(content.Space) + Needs(content) + ".");
         }
 
+        // The header goes first, so a page's content stream reads header, content, footer: tools that read it in order,
+        // such as screen readers on untagged files, meet them in that order.
+        DrawRepeating(set.Header, canvas, page, margins.Left, margins.Top, new Size(inner.Width, headerHeight));
         canvas.PushOffset(margins.Left, margins.Top + headerHeight);
         var advanced = set.Content.Draw(space, canvas, page);
         canvas.PopOffset();
         if (content.Fit == Fit.Partial && !advanced)
         {
-            throw Error(page, content.Source, "it split across pages but drew nothing of itself on this page. The space is " + LayoutErrors.Size(space) + ".", space);
+            throw Error(page, content, "it split across pages but drew nothing of itself on this page. The space is " + LayoutErrors.Size(content.Space) + ".");
         }
 
-        DrawRepeating(set.Header, canvas, page, margins.Left, margins.Top, new Size(inner.Width, headerHeight));
         DrawRepeating(set.Footer, canvas, page, margins.Left, set.Height - margins.Bottom - footerHeight, new Size(inner.Width, footerHeight));
         canvas.EndPage();
         return content.Fit == Fit.Full;
@@ -124,9 +126,8 @@ internal static class LayoutEngine
         {
             throw Error(
                 page,
-                measurement.Source,
-                $"the {kind} must fit in full, because it repeats on every page. The space is {LayoutErrors.Size(space)}{Needs(measurement)}.",
-                space);
+                measurement,
+                $"the {kind} must fit in full, because it repeats on every page. The space is {LayoutErrors.Size(measurement.Space)}{Needs(measurement)}.");
         }
 
         return measurement.Size.Height;
@@ -149,6 +150,7 @@ internal static class LayoutEngine
     private static string Needs(Measurement measurement) =>
         measurement.Needed is { } needed ? ", and it needs " + LayoutErrors.Size(needed) : "";
 
-    private static LayoutException Error(PageContext page, Element source, string reason, Size space) =>
-        new($"Page {page.PageNumber} > {source.Path}", reason, space.Width, space.Height);
+    /// <summary>An error that names the measurement's source, with <c>Page n</c> first, and the space the source had.</summary>
+    private static LayoutException Error(PageContext page, Measurement measurement, string reason) =>
+        new($"Page {page.PageNumber} > {measurement.Source.Path}", reason, measurement.Space.Width, measurement.Space.Height);
 }

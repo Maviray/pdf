@@ -43,7 +43,10 @@ internal abstract class Element
     /// Draws what <see cref="Measure"/> said fits in <paramref name="available"/>, with the element's top left at the
     /// canvas's origin, and moves the element past it.
     /// </summary>
-    /// <returns>Whether the element advanced. A container advanced if any child did.</returns>
+    /// <returns>
+    /// Whether the element advanced. A draw after <see cref="Fit.Full"/> always advances, because it finishes the
+    /// element. A container advanced if a child advanced or its own cursor moved.
+    /// </returns>
     public abstract bool Draw(Size available, ICanvas canvas, PageContext page);
 
     /// <summary>Returns the element, and every element inside it, to its state before the first draw.</summary>

@@ -9,7 +9,7 @@ namespace Maviray.Pdf.Tests.Layout;
 /// </summary>
 internal sealed class StallingBlock(string name) : Element(name)
 {
-    public override Measurement Measure(Size available, PageContext page) => Measurement.Partial(new Size(10, 1), this);
+    public override Measurement Measure(Size available, PageContext page) => Measurement.Partial(new Size(10, 1), this, available);
 
     public override bool Draw(Size available, ICanvas canvas, PageContext page) => false;
 

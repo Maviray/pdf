@@ -9,7 +9,7 @@ namespace Maviray.Pdf.Tests.Layout;
 /// <item><c>Measure</c> twice gives the same answer;</item>
 /// <item>the size never exceeds the available size;</item>
 /// <item><c>None</c> has no size;</item>
-/// <item>after <c>Partial</c>, <c>Draw</c> returns that it advanced;</item>
+/// <item>after <c>Partial</c> or <c>Full</c>, <c>Draw</c> returns that it advanced;</item>
 /// <item><c>Reset()</c> brings back the first measurement.</item>
 /// </list>
 /// Every element type of the engine runs it (P1.9, P1.10, P1.11).
@@ -42,12 +42,11 @@ internal static class ElementContract
                 }
 
                 var advanced = element.Draw(size, NullCanvas.Instance, page);
+                Assert.True(advanced, $"{element.Path} at {size} was {measurement.Fit}, and its draw didn't advance.");
                 if (measurement.Fit == Fit.Full)
                 {
                     break;
                 }
-
-                Assert.True(advanced, $"{element.Path} at {size} was Partial, and its draw didn't advance.");
             }
 
             element.Reset();
@@ -57,7 +56,7 @@ internal static class ElementContract
     }
 
     private static bool Same(Measurement a, Measurement b) =>
-        a.Fit == b.Fit && a.Size == b.Size && ReferenceEquals(a.Source, b.Source) && a.Needed == b.Needed;
+        a.Fit == b.Fit && a.Size == b.Size && ReferenceEquals(a.Source, b.Source) && a.Space == b.Space && a.Needed == b.Needed;
 
     private static string Show(Measurement m) => $"{m.Fit} {m.Size} from {m.Source.Path}";
 }

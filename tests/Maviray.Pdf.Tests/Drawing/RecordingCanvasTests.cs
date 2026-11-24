@@ -24,6 +24,20 @@ public sealed class RecordingCanvasTests
         Assert.Equal([new CanvasCall("Rectangle", 16, 26, 2, 3, Red), new CanvasCall("Rectangle", 10, 20, 2, 3, Red)], page.Calls);
     }
 
+    // A layout that pages forever fails its test instead of hanging it.
+    [Fact]
+    public void ItStopsAfterAThousandPages()
+    {
+        var canvas = new RecordingCanvas();
+        for (var page = 0; page < RecordingCanvas.MaxPages; page++)
+        {
+            canvas.BeginPage(10, 10);
+            canvas.EndPage();
+        }
+
+        Assert.Throws<InvalidOperationException>(() => canvas.BeginPage(10, 10));
+    }
+
     [Fact]
     public void ItKeepsThePageAndOffsetRules()
     {

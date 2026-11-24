@@ -23,8 +23,8 @@ internal sealed class SplittingBlock(string name, double width, double lineHeigh
         }
 
         return fitting == 0
-            ? Measurement.None(this, new Size(width, lineHeight))
-            : Measurement.Partial(new Size(width, fitting * lineHeight), this);
+            ? Measurement.None(this, available, new Size(width, lineHeight))
+            : Measurement.Partial(new Size(width, fitting * lineHeight), this, available);
     }
 
     public override bool Draw(Size available, ICanvas canvas, PageContext page)
@@ -36,7 +36,7 @@ internal sealed class SplittingBlock(string name, double width, double lineHeigh
         }
 
         _cursor += fitting;
-        return fitting > 0;
+        return fitting > 0 || _cursor == lines;
     }
 
     public override void Reset() => _cursor = 0;

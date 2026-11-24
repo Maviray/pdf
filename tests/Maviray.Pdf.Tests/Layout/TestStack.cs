@@ -6,7 +6,8 @@ namespace Maviray.Pdf.Tests.Layout;
 /// <summary>
 /// A test container that stacks its children downward from its cursor, with no spacing. It stops at the first child
 /// that is <see cref="Fit.Partial"/> or <see cref="Fit.None"/>, is <see cref="Fit.None"/> only when its first remaining
-/// child is, and passes that child's source up. Its width is the widest child's. Column (P1.10) is the real one.
+/// child is, and passes that child's source and space up. Its width is the widest child's. Moving past a finished child
+/// is progress. Column (P1.10) is the real one.
 /// </summary>
 internal sealed class TestStack : Element
 {
@@ -35,9 +36,9 @@ internal sealed class TestStack : Element
                     height += measurement.Size.Height;
                     break;
                 case Fit.Partial:
-                    return Measurement.Partial(new Size(Math.Max(width, measurement.Size.Width), height + measurement.Size.Height), measurement.Source);
+                    return measurement.WithSize(new Size(Math.Max(width, measurement.Size.Width), height + measurement.Size.Height));
                 default:
-                    return i == _cursor ? measurement : Measurement.Partial(new Size(width, height), this);
+                    return i == _cursor ? measurement : Measurement.Partial(new Size(width, height), this, available);
             }
         }
 
@@ -67,6 +68,7 @@ internal sealed class TestStack : Element
             }
 
             _cursor++;
+            advanced = true;
         }
 
         return advanced;

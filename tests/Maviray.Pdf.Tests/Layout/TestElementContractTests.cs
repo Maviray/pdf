@@ -26,6 +26,20 @@ public sealed class TestElementContractTests
     public void PageCountBlockKeepsTheContract() => ElementContract.Check(() => new PageCountBlock("Count", count => 10 * count), Sizes);
 
     [Fact]
-    public void TheCheckCatchesAnElementThatSplitsWithoutAdvancing() =>
-        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => ElementContract.Check(() => new StallingBlock("Stalling"), new Size(100, 100)));
+    public void TheCheckCatchesAnElementThatSplitsWithoutAdvancing()
+    {
+        var failure = Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => ElementContract.Check(() => new StallingBlock("Stalling"), new Size(100, 100)));
+
+        Assert.Contains("was Partial, and its draw didn't advance", failure.Message, StringComparison.Ordinal);
+    }
+
+    // A draw after Full finishes the element, which counts as progress, so a container can count on it.
+    [Fact]
+    public void TheCheckCatchesAFullDrawThatDoesntAdvance()
+    {
+        var failure = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+            () => ElementContract.Check(() => new FixedBlock("Lazy", 10, 10, Black, advances: false), new Size(100, 100)));
+
+        Assert.Contains("was Full, and its draw didn't advance", failure.Message, StringComparison.Ordinal);
+    }
 }

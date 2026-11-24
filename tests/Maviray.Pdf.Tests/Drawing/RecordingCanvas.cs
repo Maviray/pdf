@@ -10,6 +10,9 @@ namespace Maviray.Pdf.Tests.Drawing;
 /// </summary>
 internal sealed class RecordingCanvas : ICanvas
 {
+    /// <summary>The most pages it takes, so a layout that pages forever fails its test instead of hanging it.</summary>
+    public const int MaxPages = 1000;
+
     private readonly Stack<(double X, double Y)> _offsets = new();
     private RecordedPage? _page;
     private double _x;
@@ -22,6 +25,11 @@ internal sealed class RecordingCanvas : ICanvas
         if (_page is not null)
         {
             throw new InvalidOperationException("A page is already open.");
+        }
+
+        if (Pages.Count == MaxPages)
+        {
+            throw new InvalidOperationException($"The layout asked for more than {MaxPages} pages.");
         }
 
         _page = new RecordedPage(width, height, []);

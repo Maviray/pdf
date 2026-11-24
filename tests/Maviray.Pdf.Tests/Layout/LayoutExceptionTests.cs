@@ -34,6 +34,7 @@ public sealed class LayoutExceptionTests
             Assert.Equal("20 pt", LayoutErrors.Length(20));
             Assert.Equal("0.33 pt", LayoutErrors.Length(1.0 / 3));
             Assert.Equal("451.28 × 722 pt", LayoutErrors.Size(new Size(451.28, 722)));
+            Assert.Equal("∞ × 722 pt", LayoutErrors.Size(new Size(double.PositiveInfinity, 722)));
         }
         finally
         {
