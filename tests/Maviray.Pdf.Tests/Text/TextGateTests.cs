@@ -116,6 +116,14 @@ public sealed class TextGateTests
         var lines = layouts.SelectMany(layout => layout.Lines.Select(LineText)).ToArray();
         Assert.Equal(expected, lines);
 
+        // The mixed paragraph's underline ends its third line at the line's width, so not under the hanging space after
+        // "ist", and goes on from the start of the fourth (T-11). The viewer checklist describes it so.
+        var mixed = layouts[3].Lines;
+        var ending = Assert.Single(mixed[2].Decorations, decoration => decoration.Kind == DecorationKind.Underline);
+        var going = Assert.Single(mixed[3].Decorations, decoration => decoration.Kind == DecorationKind.Underline);
+        Assert.Equal(mixed[2].Width, ending.X + ending.Width, 9);
+        Assert.Equal(0, going.X, 9);
+
         // 4. The same page gives the same bytes, so the viewer check's SHA-256 identifies it.
         Assert.Equal(file, Write(layouts, tops));
 

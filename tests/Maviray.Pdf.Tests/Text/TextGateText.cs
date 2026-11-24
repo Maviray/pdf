@@ -36,7 +36,7 @@ internal static class TextGateText
     /// <summary>
     /// The mixed paragraph's 13 spans: bold, italic, a 14 pt span, underline, strikethrough, letter spacing of 0.5
     /// points, a line feed, then Turkish, Russian and Greek sentences. Each is Regular at 10 points unless it says
-    /// otherwise.
+    /// otherwise. At 220 points the underline ends one line, before a hanging space, and goes on at the next.
     /// </summary>
     public static IReadOnlyList<TextSpan> MixedSpans(TrueTypeFont regular, TrueTypeFont bold, TrueTypeFont italic)
     {
@@ -50,8 +50,8 @@ internal static class TextGateText
             new("Bitte geben Sie die Rechnungsnummer an. ", Style(italic)),
             new("Der Gesamtbetrag von ", Style(regular)),
             new("1.234,56\u00A0\u20AC", Style(regular, size: 14)),
-            new(" ist ", Style(regular)),
-            new("bis zum 30. Dezember", Style(regular, underline: true)),
+            new(" ", Style(regular)),
+            new("ist bis zum 30. Dezember", Style(regular, underline: true)),
             new(" f\u00E4llig, ", Style(regular)),
             new("nicht bis zum 15.", Style(regular, strikethrough: true)),
             new(" Der Vermerk ", Style(regular)),
