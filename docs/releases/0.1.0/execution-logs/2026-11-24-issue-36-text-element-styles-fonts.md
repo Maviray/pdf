@@ -72,3 +72,4 @@ The branch `feature/36-text-element-styles-fonts` is stacked on `feature/35-cont
   - **For P1.12:**
     - builders construct a Text element only after its span calls finish, because `.Text("x").Bold()` styles the span after `.Text` returns;
     - P1.12 decides whether the text call gets an element-level style.
+- **CI** on `bad13b8`, [run 45363300950](https://github.com/Maviray/pdf/actions/runs/45363300950): 1,059 of 1,059 tests passed, and without ICU the text tests passed 306 of 306.
