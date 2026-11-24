@@ -6,6 +6,8 @@ internal sealed record Os2Table(
     ushort WeightClass,
     ushort FsType,
     ushort FsSelection,
+    short StrikeoutSize,
+    short StrikeoutPosition,
     LineMetrics Typographic,
     LineMetrics Windows,
     int? CapHeight)
@@ -31,6 +33,8 @@ internal sealed record Os2Table(
             reader.UInt16(4),
             reader.UInt16(8),
             reader.UInt16(62),
+            reader.Int16(26),
+            reader.Int16(28),
             new LineMetrics(reader.Int16(68), reader.Int16(70), reader.Int16(72)),
             new LineMetrics(reader.UInt16(74), -reader.UInt16(76), 0),
             version >= 2 ? reader.Int16(88) : null);

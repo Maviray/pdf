@@ -206,12 +206,16 @@ A span's style gives one font and one size (T-14). Each code point gets a glyph 
 | --- | --- | --- |
 | A break character (T-06) | Nothing | Line end |
 | U+0009 tab | The glyph and advance of U+0020, or nothing if the font lacks U+0020. v1 has no tab stops | U+0009 |
-| U+00AD soft hyphen | Nothing, unless its line breaks right after it and text follows. Then a hyphen: the glyph of U+2010, or else U+002D, with its advance. If the font has neither, nothing | U+00AD at the line end, otherwise nothing |
+| U+00AD soft hyphen | Nothing, unless its line breaks right after it, something is drawn before it on its line, and text follows. Then a hyphen: the glyph of U+2010, or else U+002D, with its advance. If the font has neither, nothing | U+00AD at the line end, otherwise nothing |
+| `Default_Ignorable_Code_Point` (such as U+200B, U+200D, U+2060, U+FEFF and variation selectors) or general category Cc, mapped by the font or not | Nothing, with no advance and no report | Nothing |
 | Mapped by the font | Its glyph | Itself |
-| Not mapped, and `Default_Ignorable_Code_Point` (such as U+200B, U+200D, U+2060, U+FEFF and variation selectors) or general category Cc | Nothing, with no advance and no report | Nothing |
 | Not mapped, a space separator (Zs, such as U+00A0 or U+202F), and the font maps U+0020 | The glyph and advance of U+0020 | Itself |
 | Not mapped, with a canonical decomposition whose every code point the font maps | Those glyphs, each with its own code point | Its decomposition |
 | Anything else | `.notdef` (glyph 0) with glyph 0's advance, and reported as missing | Itself (F-07) |
+
+*Amended 2026-11-23, during P1.7:*
+- Default ignorables and controls came after "mapped by the font", so a font's glyph for one was drawn. Noto Sans maps U+2060 to an empty glyph 0.6 em wide, and U+034F, U+200E and U+200F to glyphs with outlines, which drew invisible characters as boxes or gaps. They now draw nothing whatever the font maps.
+- A soft hyphen draws a hyphen only after drawn text on its line, so no line holds a hyphen alone.
 
 The prepared paragraph lists every missing code point with the span it came from. The layout spec turns these into the design document's diagnostic event, and font fallback arrives in P2.
 
@@ -236,8 +240,8 @@ The paragraph's height is the sum of its lines' heights. There is no spacing bet
 
 **Lines.** The text between two required breaks is filled on its own:
 - A segment is the text from one allowed break to the next. Its spaces belong to its end, because UAX #14 breaks after spaces.
-- A segment goes onto the line when the line, ended right after that segment, fits. A segment that ends at a soft hyphen is therefore tested with the hyphen, even if a later segment then joins the line.
-- When a segment doesn't fit, the line ends before it, and the segment starts the next line.
+- The line ends after the last segment, up to the next required break, with which it fits as it would be drawn: with the hyphen, when it ends at a soft hyphen that draws one. The segment after it starts the next line.
+  - *Amended 2026-11-23, during P1.7.* The first wording tested each segment that ends at a soft hyphen with the hyphen, even if a later segment then joined the line. Whenever what follows the soft hyphen is narrower than the hyphen, that broke the line early, and the round trip below failed. P1.7's random round-trip test found it. Its review then found that stopping at the first segment that doesn't fit isn't enough either: with negative letter spacing, a line can narrow as it grows.
 
 **Fit.** A line fits when its width is at most the available width plus 10⁻⁶ point. That tolerance absorbs floating-point noise in widths computed by the layout. A line's width is the sum of its drawn advances and the letter spacing between them (T-10). It counts neither of these:
 - trailing U+0020 and U+0009, which hang: they aren't measured, drawn or decorated;
@@ -245,7 +249,7 @@ The paragraph's height is the sum of its lines' heights. There is no spacing bet
 
 If the line ends at a soft hyphen, the hyphen's advance counts.
 
-**Words too wide for a line.** A segment that doesn't fit on an empty line is broken between grapheme clusters. The line takes the most clusters that fit, and at least one. The rest continues on the next line, where normal breaking resumes. No hyphen is drawn at such a break.
+**Words too wide for a line.** When no segment end fits, the first segment is cut. If it fits without the hyphen its soft hyphen would draw, the line takes it whole. Otherwise it is broken between grapheme clusters, and the line takes the most clusters that fit, and at least one. The rest continues on the next line, where normal breaking resumes. No hyphen is drawn at such a break.
 
 **Overflow.** A line can be wider than the available width plus the tolerance only when it holds a single cluster. The engine reports that line's true width, and the layout spec decides what an overflow means (FR-09).
 
