@@ -7,7 +7,7 @@ namespace Maviray.Pdf.Tests.Invoice;
 internal static class InvoiceSample
 {
     /// <summary>The item count that makes the document run to exactly 10 pages, with the totals on the last.</summary>
-    public const int ItemCount = 420;
+    public const int ItemCount = 385;
 
     private static readonly (string Text, string Unit, decimal UnitPrice, int VatRate)[] Templates =
     [
