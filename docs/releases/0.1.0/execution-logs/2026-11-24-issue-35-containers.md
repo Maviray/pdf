@@ -62,3 +62,4 @@ The branch `feature/35-containers` is stacked on `feature/34-layout-engine-canva
     - `ARowCellsBackgroundStretchesToTheRowsHeight` gives 100 × 40, and 100 × 10 without stretching;
     - the contained variants keep the old values.
   - **Full suite:** Release, 959 tests, all passed.
+- **CI** on `226d89a`, after the stretch change, [run 45363075896](https://github.com/Maviray/pdf/actions/runs/45363075896): 959 of 959 tests passed, and without ICU the text tests passed 302 of 302.
