@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Maviray.Pdf.Fonts.Default</PackageId>
+    <Description>The Noto Sans fonts for Maviray.Pdf, compiled in: call FontRegistry.Default.RegisterNotoSans(), and documents can use them with no font files of their own.</Description>
+    <PackageTags>pdf;fonts;noto-sans;maviray</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Packing turns this into a dependency on the Maviray.Pdf package of the same version (spec L-15). -->
+    <ProjectReference Include="..\Maviray.Pdf\Maviray.Pdf.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The four Noto Sans faces (spec F-12), embedded under their file names. -->
+    <EmbeddedResource Include="Fonts\NotoSans-*.ttf" LogicalName="%(Filename)%(Extension)" />
+    <!-- The fonts' licence, which travels with them (SIL Open Font License, condition 2). -->
+    <None Update="Fonts\OFL.txt" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
