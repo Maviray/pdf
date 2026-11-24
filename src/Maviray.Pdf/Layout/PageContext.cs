@@ -5,11 +5,14 @@ namespace Maviray.Pdf.Layout;
 /// <param name="pageCount">What a page-count span shows on this page: the page number in the first layout pass, and
 /// the count the pass before ended with in every later one.</param>
 /// <param name="isRenderPass">Whether this is the pass that draws on the output, not a layout pass.</param>
-internal sealed class PageContext(int pageNumber, int pageCount, bool isRenderPass)
+/// <param name="diagnostics">Where diagnostics go, which only the render pass carries (L-14), or null.</param>
+internal sealed class PageContext(int pageNumber, int pageCount, bool isRenderPass, DiagnosticSink? diagnostics = null)
 {
     public int PageNumber { get; } = pageNumber;
 
     public int PageCount { get; } = pageCount;
 
     public bool IsRenderPass { get; } = isRenderPass;
+
+    public DiagnosticSink? Diagnostics { get; } = diagnostics;
 }

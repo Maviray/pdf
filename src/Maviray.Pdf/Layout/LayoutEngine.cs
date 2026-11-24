@@ -16,27 +16,30 @@ internal static class LayoutEngine
     /// the null canvas find it first: the first shows each page's own number, each later one the count the pass before
     /// ended with, until a pass ends with the count it showed. The render pass then shows that count.
     /// </summary>
+    /// <param name="sets">The page sets, in order.</param>
+    /// <param name="canvas">The canvas the render pass draws on.</param>
+    /// <param name="diagnostics">Where the render pass reports diagnostics (L-14), or null.</param>
     /// <returns>The number of pages.</returns>
     /// <exception cref="LayoutException">Content can't be laid out, or the page count still changes the layout after
     /// three layout passes.</exception>
-    public static int Generate(IReadOnlyList<PageSet> sets, ICanvas canvas)
+    public static int Generate(IReadOnlyList<PageSet> sets, ICanvas canvas, DiagnosticSink? diagnostics = null)
     {
         ArgumentNullException.ThrowIfNull(sets);
         ArgumentNullException.ThrowIfNull(canvas);
         if (!sets.Any(set => set.ShowsPageCount))
         {
-            return RunPass(sets, canvas, null, isRenderPass: true);
+            return RunPass(sets, canvas, null, isRenderPass: true, diagnostics);
         }
 
         var counts = new List<int>(MaxLayoutPasses);
         int? shown = null;
         for (var pass = 1; ; pass++)
         {
-            var count = RunPass(sets, NullCanvas.Instance, shown, isRenderPass: false);
+            var count = RunPass(sets, NullCanvas.Instance, shown, isRenderPass: false, diagnostics: null);
             counts.Add(count);
             if (pass >= 2 && count == shown)
             {
-                return RunPass(sets, canvas, count, isRenderPass: true);
+                return RunPass(sets, canvas, count, isRenderPass: true, diagnostics);
             }
 
             if (pass == MaxLayoutPasses)
@@ -53,8 +56,8 @@ internal static class LayoutEngine
     }
 
     /// <summary>One pass over every set, with the tree reset first. <paramref name="shown"/> is the count page-count
-    /// spans show, or null for each page's own number.</summary>
-    private static int RunPass(IReadOnlyList<PageSet> sets, ICanvas canvas, int? shown, bool isRenderPass)
+    /// spans show, or null for each page's own number. A layout pass has no sink; the render pass may.</summary>
+    private static int RunPass(IReadOnlyList<PageSet> sets, ICanvas canvas, int? shown, bool isRenderPass, DiagnosticSink? diagnostics)
     {
         foreach (var set in sets)
         {
@@ -68,7 +71,7 @@ internal static class LayoutEngine
             do
             {
                 pageNumber++;
-                done = RunPage(set, canvas, new PageContext(pageNumber, shown ?? pageNumber, isRenderPass));
+                done = RunPage(set, canvas, new PageContext(pageNumber, shown ?? pageNumber, isRenderPass, diagnostics));
             }
             while (!done);
         }
