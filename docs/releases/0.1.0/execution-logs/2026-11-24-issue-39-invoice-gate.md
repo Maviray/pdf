@@ -59,3 +59,4 @@ The branch `feature/39-invoice-gate` is stacked on `feature/38-default-fonts-pac
     - the headings above the addresses follow plan ruling 1;
     - the ink check can't see a shift smaller than the glyphs' own inset, and the page ranges now pin the layout;
     - `Create(itemCount)` names the knob that sizes the document.
+- **CI** on `87b4f03`, [run 45378399592](https://github.com/Maviray/pdf/actions/runs/45378399592): 1,150 of 1,150 tests passed, and without ICU the text tests passed 306 of 306. The gate passes in CI, as the work item requires. The PR is [#49](https://github.com/Maviray/pdf/pull/49).
