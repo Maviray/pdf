@@ -168,7 +168,7 @@ The algorithm is the Unicode Standard's, chapter 3.11, with Hangul syllables com
 **Fast path.** A quick check (`NFC_Quick_Check`, also derived from the data) finds the first code point that might change. It then works from the last starter before it. A string that is already NFC is returned as the same instance, with nothing allocated.
 
 **Conformance:**
-- every line of `NormalizationTest.txt` passes all of its NFC conditions, c2 = NFC(c1) = NFC(c2) = NFC(c3) and c4 = NFC(c4) = NFC(c5), in all four parts;
+- every line of `NormalizationTest.txt` passes all of its NFC conditions, c2 = NFC(c1) = NFC(c2) = NFC(c3) and c4 = NFC(c4) = NFC(c5), in every part;
 - NFC leaves every other code point, surrogates aside, unchanged.
 
 **Input size.** The implementation doesn't recurse, so a long run of combining marks costs a sort and nothing worse.

@@ -58,6 +58,17 @@ jobs:
           MAVIRAY_PDF_REQUIRE_VALIDATORS: true
         run: dotnet test --no-build -c "$CONFIGURATION"
 
+      # The text engine must not depend on ICU (spec T-01), so its tests run a second time with globalization
+      # invariant. A namespace filter matches exactly, so the text namespace and its sub-namespaces are both named.
+      - name: Test the text engine without ICU
+        env:
+          DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
+          MAVIRAY_PDF_REQUIRE_VALIDATORS: true
+        run: >-
+          dotnet test --no-build -c "$CONFIGURATION"
+          --filter-namespace "Maviray.Pdf.Tests.Text"
+          --filter-namespace "Maviray.Pdf.Tests.Text.*"
+
       # The PDFs and renders the tests wrote, for checking by hand in Acrobat, Chrome and Firefox (spec D-13).
       - name: Upload the generated PDFs
         if: always()

@@ -22,6 +22,15 @@
 *.icc   binary
 *.icm   binary
 
+# Compressed data, such as the Unicode Character Database files in the tests
+*.gz    binary
+
 # The Noto Sans licence ships exactly as the Noto project distributes it, and its checksum is pinned in a test,
 # so it keeps LF line endings on every platform.
 src/Maviray.Pdf.Fonts.Default/Fonts/OFL.txt text eol=lf
+
+# The Unicode licence is kept exactly as unicode.org distributes it, and its checksum is pinned in a test.
+tests/Maviray.Pdf.Tests/Text/Unicode/Data/16.0.0/license.txt text eol=lf
+
+# The generated Unicode tables: the staleness test compares them byte for byte with the generator's LF output.
+src/Maviray.Pdf/Text/Unicode/*.cs text eol=lf
