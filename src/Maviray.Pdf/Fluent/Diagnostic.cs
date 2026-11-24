@@ -23,7 +23,8 @@ public sealed class Diagnostic
     /// <summary>The element it happened in, from the page down, such as <c>Page 3 &gt; Content &gt; Column &gt; Item 2 &gt; Text</c>.</summary>
     public string ElementPath { get; }
 
-    /// <summary>The page it happened on, counted from 1.</summary>
+    /// <summary>The page, counted from 1, where the element was first drawn. A character missing on a later page of
+    /// the same paragraph is reported with this page too.</summary>
     public int PageNumber { get; }
 
     /// <summary>The kind, the path and the message.</summary>

@@ -6,7 +6,7 @@ namespace Maviray.Pdf.Text;
 /// <summary>
 /// A paragraph prepared once, independently of any width (spec T-14): the spans cleaned and normalized one by one and
 /// joined (T-03), the grapheme clusters and break opportunities (T-05, T-06), and every code point's glyphs (T-07).
-/// <see cref="Fill"/> then lays it out at any width (T-08 to T-11). It is immutable, and holds no document state, so
+/// <see cref="Fill(double)"/> then lays it out at any width (T-08 to T-11). It is immutable, and holds no document state, so
 /// it can be filled many times and shared across threads.
 /// </summary>
 internal sealed class PreparedParagraph
@@ -147,7 +147,17 @@ internal sealed class PreparedParagraph
     /// next segment wouldn't fit, at a required break, or between clusters when a word is too wide for any line.
     /// </summary>
     /// <param name="width">Positive and finite, or positive infinity to measure the paragraph's natural width.</param>
-    public TextLayout Fill(double width)
+    public TextLayout Fill(double width) => Fill(width, 0);
+
+    /// <summary>
+    /// Lays out what is left of the paragraph from UTF-16 index <paramref name="from"/>, which starts a line of an
+    /// earlier fill, at <paramref name="width"/> points: the lines a fill of the whole would give from there, wrapped at
+    /// this width (T-14, amended in P1.11). A paragraph split across pages fills its rest at each page part's width.
+    /// The first line's top is 0.
+    /// </summary>
+    /// <param name="width">Positive and finite, or positive infinity.</param>
+    /// <param name="from">Where a grapheme cluster starts, from 0 to the text's length.</param>
+    public TextLayout Fill(double width, int from)
     {
         if (!(width > 0))
         {
@@ -157,7 +167,7 @@ internal sealed class PreparedParagraph
         var lines = new List<TextLine>();
         var top = 0.0;
         var widest = 0.0;
-        for (var start = 0; start < ClusterCount;)
+        for (var start = ClusterAt(from); start < ClusterCount;)
         {
             var (end, lineWidth, cut) = FitLine(start, width + FitTolerance);
             var line = BuildLine(start, end, lineWidth, width, top, cut);
@@ -286,6 +296,21 @@ internal sealed class PreparedParagraph
         end > start && end < ClusterCount && _clusterKinds[end - 1] == ClusterKind.SoftHyphen && _lastDrawnBefore[end - 1] >= start;
 
     private int SpanOfCluster(int cluster) => _codePointSpans[_clusterFirst[cluster]];
+
+    /// <summary>The cluster that starts at UTF-16 index <paramref name="index"/>, or the cluster count at the text's end.</summary>
+    private int ClusterAt(int index)
+    {
+        if (index == Text.Length)
+        {
+            return ClusterCount;
+        }
+
+        var codePoint = (uint)index < (uint)Text.Length && _clusterStarts[index] ? _codePointAt[index] : -1;
+        var cluster = codePoint < 0 ? -1 : Array.BinarySearch(_clusterFirst, 0, ClusterCount, codePoint);
+        return cluster >= 0
+            ? cluster
+            : throw new ArgumentOutOfRangeException(nameof(index), index, "A fill starts where a grapheme cluster of the text starts.");
+    }
 
     private TextLine BuildLine(int start, int end, double width, double available, double top, bool cut)
     {

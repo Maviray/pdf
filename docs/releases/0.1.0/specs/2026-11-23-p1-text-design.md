@@ -329,6 +329,8 @@ Colour isn't part of it: a layout refers to spans by index, and the drawing side
    - each line's glyph runs, one per span segment. A run holds the span's index, its x position and its glyphs. Each glyph holds its glyph ID, its code point, its x position and the extra advance after it.
    - each line's decorations: the kind, the span's index, x, width, top edge and thickness.
 
+*Amended 2026-11-24, during P1.11:* a fill can also start where a line of an earlier fill starts, and lays out what is left of the paragraph from there, with the first line's top at 0. The layout spec's Text element fills its rest that way on each page, because an Align or a Row draws it at another width than the content's. A cursor counted in lines of one fill lost or repeated lines when the width changed.
+
 **Coordinates.** Positions are in points from the paragraph's left edge and each line's top, with y growing downward, like the layout spec's canvas.
 
 **Performance.** Fill can run many times per paragraph, once for each width the layout asks for. It therefore avoids LINQ and allocations per glyph, and never repeats preparation.

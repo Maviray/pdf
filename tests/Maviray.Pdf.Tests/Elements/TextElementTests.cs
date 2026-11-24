@@ -30,7 +30,7 @@ public sealed class TextElementTests
 
         Assert.Equal((Fit.Partial, 96.0), (measurement.Fit, Math.Round(measurement.Size.Height, 6)));
         Assert.Equal([8, 8, 8, 6], canvas.Pages.Select(p => p.Calls.Count));
-        Assert.Equal((8, 50.0), (canvas.Pages[1].Calls[0].LineIndex, canvas.Pages[1].Calls[0].Y));
+        Assert.Equal(("Zeile 9", 50.0), (LineText(canvas.Pages[1].Calls[0]), canvas.Pages[1].Calls[0].Y));
     }
 
     [Fact]
@@ -175,6 +175,83 @@ public sealed class TextElementTests
 
         var line = calls[0].Layout!.Lines[0];
         Assert.Equal((495 - measurement.Size.Width) / 2, line.Offset, 9);
+    }
+
+    // With room for one line, a too-wide second line is the next page's problem, not this one's.
+    [Fact]
+    public void TheTooWideCheckCountsOnlyTheLinesThatFit()
+    {
+        var text = new TextElement(
+            [Run("a\n"), new TextRun(TextRunKind.Text, "W", new TextStyle().FontSize(100))],
+            Base,
+            new TextStyle(),
+            TextAlignment.Left,
+            Fonts);
+
+        Assert.Equal(Fit.Partial, text.Measure(new Size(20, 12), Page()).Fit);
+    }
+
+    [Fact]
+    public void APageNumberAtAnInfiniteWidthPreparesAgain()
+    {
+        var footer = new TextElement([Run("Seite "), new TextRun(TextRunKind.PageNumber, "", new TextStyle())], Base, new TextStyle(), TextAlignment.Left, Fonts);
+        var infinite = new Size(double.PositiveInfinity, 100);
+
+        var one = footer.Measure(infinite, new PageContext(1, 10, isRenderPass: true)).Size.Width;
+        var ten = footer.Measure(infinite, new PageContext(10, 10, isRenderPass: true)).Size.Width;
+
+        Assert.True(ten > one, $"Page 10's footer is {ten} wide, page 1's {one}.");
+    }
+
+    [Fact]
+    public void LetterSpacingIsAFractionOfTheSize()
+    {
+        var plain = new TextElement([Run("ab")], Base, new TextStyle(), TextAlignment.Left, Fonts).Measure(new Size(495, 100), Page()).Size.Width;
+        var spaced = new TextElement([Run("ab")], Base.LetterSpacing(0.1), new TextStyle(), TextAlignment.Left, Fonts).Measure(new Size(495, 100), Page()).Size.Width;
+
+        Assert.Equal(plain + 1, spaced, 9);
+    }
+
+    [Fact]
+    public void TheElementsStyleWinsOverTheInheritedOne()
+    {
+        var text = new TextElement([Run("Hallo")], new TextStyle().FontSize(14).LineHeight(1.2), new TextStyle().FontSize(10), TextAlignment.Left, Fonts);
+
+        Assert.Equal(16.8, text.Measure(new Size(495, 100), Page()).Size.Height, 6);
+    }
+
+    [Fact]
+    public void UnderlineAndStrikethroughAreEachTheirOwn()
+    {
+        var text = new TextElement(
+            [new TextRun(TextRunKind.Text, "unter ", new TextStyle().Underline()), new TextRun(TextRunKind.Text, "durch", new TextStyle().Strikethrough())],
+            Base,
+            new TextStyle(),
+            TextAlignment.Left,
+            Fonts);
+
+        var (_, calls) = ElementCanvas.Draw(text, new Size(495, 100));
+
+        var kinds = calls[0].Layout!.Lines[0].Decorations.Select(decoration => (decoration.SpanIndex, decoration.Kind));
+        Assert.Equal([(0, DecorationKind.Underline), (1, DecorationKind.Strikethrough)], kinds);
+    }
+
+    // A parent that adds lengths in another order can give the Text a hair less than it measured (P1.10 review).
+    [Fact]
+    public void AHeightAHairShortOfTheMeasuredOneStillFits()
+    {
+        var text = new TextElement([Run(string.Join("\n", Enumerable.Range(1, 7).Select(i => $"Zeile {i}")))], new TextStyle().FontSize(10).LineHeight(1.23), new TextStyle(), TextAlignment.Left, Fonts);
+        var height = text.Measure(new Size(495, 1000), Page()).Size.Height;
+
+        Assert.Equal(Fit.Full, text.Measure(new Size(495, height - 5e-7), Page()).Fit);
+    }
+
+    [Fact]
+    public void NoneNeedsTheFirstLinesWidthToo()
+    {
+        var measurement = Text(ThirtyLines).Measure(new Size(495, 11), Page());
+
+        Assert.True(measurement.Needed!.Value.Width > 0, "None gave no width for the first line.");
     }
 
     [Fact]

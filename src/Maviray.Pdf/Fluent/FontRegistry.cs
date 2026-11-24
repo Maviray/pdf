@@ -13,6 +13,11 @@ public sealed class FontRegistry
     private readonly Dictionary<string, List<FontFace>> _faces = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<string> _families = [];
 
+    /// <summary>Creates an empty registry, for a document that shouldn't share the process-wide one.</summary>
+    public FontRegistry()
+    {
+    }
+
     /// <summary>The process-wide registry, which documents use unless their settings name another.</summary>
     public static FontRegistry Default { get; } = new();
 
@@ -34,6 +39,7 @@ public sealed class FontRegistry
     /// <param name="weight">The face's weight, or null for the font's own (<c>usWeightClass</c>).</param>
     /// <param name="italic">Whether the face is italic, or null for the font's own flag.</param>
     /// <returns>This registry.</returns>
+    /// <exception cref="ArgumentNullException">A family or the data is null.</exception>
     /// <exception cref="ArgumentException"><paramref name="family"/> is blank, or the family already has a face of that
     /// weight and style.</exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="weight"/> isn't from 1 to 1,000.</exception>
@@ -53,6 +59,7 @@ public sealed class FontRegistry
     /// <param name="weight">The face's weight, or null for the font's own (<c>usWeightClass</c>).</param>
     /// <param name="italic">Whether the face is italic, or null for the font's own flag.</param>
     /// <returns>This registry.</returns>
+    /// <exception cref="ArgumentNullException">A family or the data is null.</exception>
     /// <exception cref="ArgumentException"><paramref name="family"/> is blank, or the family already has a face of that
     /// weight and style.</exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="weight"/> isn't from 1 to 1,000.</exception>
@@ -73,11 +80,14 @@ public sealed class FontRegistry
     /// <param name="weight">The face's weight, or null for the font's own (<c>usWeightClass</c>).</param>
     /// <param name="italic">Whether the face is italic, or null for the font's own flag.</param>
     /// <returns>This registry.</returns>
+    /// <exception cref="ArgumentNullException">A family or the data is null.</exception>
     /// <exception cref="ArgumentException"><paramref name="family"/> is blank, or the family already has a face of that
     /// weight and style.</exception>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="weight"/> isn't from 1 to 1,000.</exception>
     /// <exception cref="NotSupportedException">The font is one the library can't embed correctly.</exception>
     /// <exception cref="InvalidDataException">The font is damaged.</exception>
+    /// <exception cref="IOException">The file can't be read, such as when it doesn't exist.</exception>
+    /// <exception cref="UnauthorizedAccessException">The file may not be read.</exception>
     public FontRegistry Register(string family, string path, FontWeight? weight = null, bool? italic = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
