@@ -98,6 +98,23 @@ internal static class Poppler
             .ToList();
     }
 
+    /// <summary>The document information <c>pdfinfo</c> reports, by its labels such as <c>Title</c>, in UTF-8.</summary>
+    public static IReadOnlyDictionary<string, string> Info(string path)
+    {
+        var result = ExternalTool.Run("pdfinfo", "-enc", "UTF-8", path);
+        if (result.ExitCode != 0 || Diagnostics(result.StandardError).Count > 0)
+        {
+            Assert.Fail($"pdfinfo exited with {result.ExitCode} for {path}:\n{result.StandardError}");
+        }
+
+        return result.StandardOutput.Split('\n')
+            .Select(line => line.TrimEnd('\r'))
+            .Where(line => line.Contains(':', StringComparison.Ordinal))
+            .Select(line => (Key: line[..line.IndexOf(':', StringComparison.Ordinal)], Value: line[(line.IndexOf(':', StringComparison.Ordinal) + 1)..].Trim()))
+            .GroupBy(pair => pair.Key, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Value, StringComparer.Ordinal);
+    }
+
     /// <summary>
     /// The lines of poppler's <paramref name="standardError"/> that report a problem with the file. Poppler's Windows
     /// build also writes <c>Syntax Error: No display font for '&lt;name&gt;'</c> for a substitute font the machine

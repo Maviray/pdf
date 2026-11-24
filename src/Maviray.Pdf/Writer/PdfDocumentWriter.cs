@@ -12,13 +12,15 @@ internal sealed class PdfDocumentWriter : IDisposable
     private readonly PdfFileWriter _file;
     private readonly FontResources _fonts;
     private readonly PdfReference _pageTree;
+    private readonly PdfWriterOptions _options;
     private readonly PdfArray _kids = [];
     private PdfPageWriter? _openPage;
     private bool _closed;
 
     public PdfDocumentWriter(Stream output, PdfWriterOptions? options = null)
     {
-        _file = new PdfFileWriter(output, options ?? new PdfWriterOptions());
+        _options = options ?? new PdfWriterOptions();
+        _file = new PdfFileWriter(output, _options);
         _fonts = new FontResources(_file);
 
         // Reserved first, so every page dictionary can name its /Parent as soon as it is written.
@@ -124,12 +126,49 @@ internal sealed class PdfDocumentWriter : IDisposable
             .Set(PdfName.Kids, _kids)
             .Set(PdfName.Count, new PdfInteger(_kids.Count)));
 
-        var catalog = _file.Write(new PdfDictionary()
+        var catalogDictionary = new PdfDictionary()
             .Set(PdfName.Type, PdfName.Catalog)
-            .Set(PdfName.Pages, _pageTree));
+            .Set(PdfName.Pages, _pageTree);
+        if (_options.Language is { } language)
+        {
+            catalogDictionary.Set(new PdfName("Lang"), PdfString.FromText(language));
+        }
 
-        _file.Close(catalog);
+        if (_options.Info?.Title is not null)
+        {
+            catalogDictionary.Set(new PdfName("ViewerPreferences"), new PdfDictionary().Set(new PdfName("DisplayDocTitle"), PdfBoolean.True));
+        }
+
+        var catalog = _file.Write(catalogDictionary);
+        var info = _file.Write(InfoDictionary(_options.Info));
+        _file.Close(catalog, info);
         _closed = true;
+    }
+
+    /// <summary>The document information dictionary: each value that is set, as a text string, and always <c>/Producer</c> (L-12).</summary>
+    private static PdfDictionary InfoDictionary(PdfDocumentInfo? info)
+    {
+        var dictionary = new PdfDictionary();
+        void Text(string key, string? value)
+        {
+            if (value is not null)
+            {
+                dictionary.Set(new PdfName(key), PdfString.FromText(value));
+            }
+        }
+
+        Text("Title", info?.Title);
+        Text("Author", info?.Author);
+        Text("Subject", info?.Subject);
+        Text("Keywords", info?.Keywords);
+        Text("Creator", info?.Creator);
+        Text("Producer", "Maviray.Pdf " + PackageVersion.Value);
+        if (info?.CreationDate is { } date)
+        {
+            dictionary.Set(new PdfName("CreationDate"), PdfString.FromText(PdfDate.Format(date)));
+        }
+
+        return dictionary;
     }
 
     /// <summary>Returns pooled buffers. Disposing without <see cref="Close"/> leaves an incomplete file.</summary>
