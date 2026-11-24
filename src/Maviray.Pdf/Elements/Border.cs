@@ -8,7 +8,9 @@ namespace Maviray.Pdf.Elements;
 /// Bands of colour around a child, which take space as in CSS (spec L-06). The child gets the space minus the border
 /// widths, and the size is the child's plus them. A space below zero is <see cref="Fit.None"/>, as for
 /// <see cref="Padding"/>. On every page part it draws the child, then fills the top, bottom, left and right bands of its
-/// box: the width it is drawn at, and the child's height plus the top and bottom widths (P1.10 plan, ruling 3).
+/// box: the width it is drawn at, and by default the height it is drawn at, so a Row's cell is framed to the row's
+/// height; without stretching, the child's height plus the top and bottom widths (P1.10 plan, ruling 3, amended by the
+/// user's decision of 2026-11-24).
 /// </summary>
 internal sealed class Border : Element
 {
@@ -18,10 +20,19 @@ internal sealed class Border : Element
     private readonly double _bottom;
     private readonly RgbColor _color;
     private readonly Element _child;
+    private readonly bool _stretch;
 
-    public Border(double left, double top, double right, double bottom, RgbColor color, Element child)
+    /// <param name="left">The left band's width in points, zero or more and finite.</param>
+    /// <param name="top">The top band's width in points, zero or more and finite.</param>
+    /// <param name="right">The right band's width in points, zero or more and finite.</param>
+    /// <param name="bottom">The bottom band's width in points, zero or more and finite.</param>
+    /// <param name="color">The bands' colour.</param>
+    /// <param name="child">The framed element.</param>
+    /// <param name="stretch">Whether the box is the height it is drawn at, or wraps its child.</param>
+    public Border(double left, double top, double right, double bottom, RgbColor color, Element child, bool stretch = true)
         : base("Border")
     {
+        _stretch = stretch;
         _left = Padding.Length(left, nameof(left));
         _top = Padding.Length(top, nameof(top));
         _right = Padding.Length(right, nameof(right));
@@ -52,7 +63,7 @@ internal sealed class Border : Element
     public override bool Draw(Size available, ICanvas canvas, PageContext page)
     {
         var inner = Inner(available);
-        var height = _child.Measure(inner, page).Size.Height + _top + _bottom;
+        var height = _stretch ? available.Height : _child.Measure(inner, page).Size.Height + _top + _bottom;
         canvas.PushOffset(_left, _top);
         var advanced = _child.Draw(inner, canvas, page);
         canvas.PopOffset();

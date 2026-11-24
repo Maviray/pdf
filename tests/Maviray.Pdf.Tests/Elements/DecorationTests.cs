@@ -16,22 +16,46 @@ public sealed class DecorationTests
 
     private static readonly Size[] Sizes = [new(500, 700), new(100, 250), new(50, 15), new(0, 0)];
 
+    // By default a background fills the space it is drawn in (L-06, amended by the user's decision of 2026-11-24).
     [Fact]
-    public void ABackgroundFillsTheWidthGivenAndTheChildsHeightFirst()
+    public void ABackgroundStretchesToTheSpaceItIsDrawnInFirst()
     {
         var (measurement, calls) = ElementCanvas.Draw(new Background(Grey, new FixedBlock("Block", 50, 20, Blue)), new Size(200, 100));
 
         Assert.Equal(new Size(50, 20), measurement.Size);
-        Assert.Equal([new CanvasCall("Rectangle", 0, 0, 200, 20, Grey), new CanvasCall("Rectangle", 0, 0, 50, 20, Blue)], calls);
+        Assert.Equal([new CanvasCall("Rectangle", 0, 0, 200, 100, Grey), new CanvasCall("Rectangle", 0, 0, 50, 20, Blue)], calls);
+    }
+
+    [Fact]
+    public void ABackgroundThatDoesntStretchCoversItsChildsHeight()
+    {
+        var (_, calls) = ElementCanvas.Draw(new Background(Grey, new FixedBlock("Block", 50, 20, Blue), stretch: false), new Size(200, 100));
+
+        Assert.Equal(new CanvasCall("Rectangle", 0, 0, 200, 20, Grey), calls[0]);
     }
 
     [Fact]
     public void ABackgroundIsOnEveryPagePart()
     {
-        var canvas = Generate(new Background(Grey, new SplittingBlock("Lines", 100, 10, 100, Blue)));
+        var stretched = Generate(new Background(Grey, new SplittingBlock("Lines", 100, 10, 100, Blue)));
+        var contained = Generate(new Background(Grey, new SplittingBlock("Lines", 100, 10, 100, Blue), stretch: false));
 
-        Assert.Equal(new CanvasCall("Rectangle", 50, 50, 495, 740, Grey), canvas.Pages[0].Calls[0]);
-        Assert.Equal(new CanvasCall("Rectangle", 50, 50, 495, 260, Grey), canvas.Pages[1].Calls[0]);
+        Assert.Equal([742.0, 742.0], stretched.Pages.Select(page => page.Calls[0].Height));
+        Assert.Equal([740.0, 260.0], contained.Pages.Select(page => page.Calls[0].Height));
+    }
+
+    // In a Row, the space is the row's height, so a cell's background lines up with its neighbours.
+    [Fact]
+    public void ARowCellsBackgroundStretchesToTheRowsHeight()
+    {
+        RowItem Cell(bool stretch) => new(RowItemKind.Fixed, 100, new Background(Grey, new SpaceProbe("Probe", 10, 10, Blue), stretch));
+        RowItem Tall() => new(RowItemKind.Fixed, 100, new SpaceProbe("Tall", 10, 40, Blue));
+
+        var stretched = ElementCanvas.Draw(new Row([Cell(true), Tall()], 0), Space).Calls[0];
+        var contained = ElementCanvas.Draw(new Row([Cell(false), Tall()], 0), Space).Calls[0];
+
+        Assert.Equal((100.0, 40.0), (stretched.Width, stretched.Height));
+        Assert.Equal((100.0, 10.0), (contained.Width, contained.Height));
     }
 
     [Fact]
@@ -44,9 +68,25 @@ public sealed class DecorationTests
     }
 
     [Fact]
-    public void ABorderDrawsTheChildThenFourBands()
+    public void ABorderDrawsTheChildThenFourBandsAroundTheSpace()
     {
         var (_, calls) = ElementCanvas.Draw(new Border(1, 2, 3, 4, Black, new FixedBlock("Block", 50, 20, Blue)), new Size(200, 100));
+
+        Assert.Equal(
+            [
+                new CanvasCall("Rectangle", 1, 2, 50, 20, Blue),
+                new CanvasCall("Rectangle", 0, 0, 200, 2, Black),
+                new CanvasCall("Rectangle", 0, 96, 200, 4, Black),
+                new CanvasCall("Rectangle", 0, 0, 1, 100, Black),
+                new CanvasCall("Rectangle", 197, 0, 3, 100, Black),
+            ],
+            calls);
+    }
+
+    [Fact]
+    public void ABorderThatDoesntStretchWrapsItsChild()
+    {
+        var (_, calls) = ElementCanvas.Draw(new Border(1, 2, 3, 4, Black, new FixedBlock("Block", 50, 20, Blue), stretch: false), new Size(200, 100));
 
         Assert.Equal(
             [
