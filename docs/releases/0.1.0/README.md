@@ -1,6 +1,6 @@
 # Release 0.1.0: Foundations and MVP layout
 
-**Status:** in progress, updated 2026-11-23.
+**Status:** in progress, updated 2026-11-24.
 
 Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Maviray.Pdf-Design-Document.md). P0 has no public API, so 0.1.0 is the first release with one. Work items are GitHub issues in the milestone [v0.1.0](https://github.com/Maviray/pdf/milestone/1).
 
@@ -18,8 +18,16 @@ Release 0.1.0 carries phases P0 and P1 of the [design document](../../design/Mav
 | [#22](https://github.com/Maviray/pdf/issues/22) P1.3 | Embedded TrueType fonts in the PDF | Merged 2026-11-23 in [#26](https://github.com/Maviray/pdf/pull/26). Plan: [issue 22](plans/2026-11-23-issue-22-embedded-truetype-fonts.md). Log: [issue 22](execution-logs/2026-11-23-issue-22-embedded-truetype-fonts.md) |
 | [#23](https://github.com/Maviray/pdf/issues/23) P1.4 | Fonts gate | Merged 2026-11-23 in [#27](https://github.com/Maviray/pdf/pull/27). Plan: [issue 23](plans/2026-11-23-issue-23-fonts-gate.md). Log: [issue 23](execution-logs/2026-11-23-issue-23-fonts-gate.md). Checklist: [viewer check](../../qa/checklists/viewer-check.md) |
 | P1 text spec | Design of P1 Text and its four work items | Approved, 2026-11-23, merged in [#28](https://github.com/Maviray/pdf/pull/28). Design: [P1 Text](specs/2026-11-23-p1-text-design.md) |
-| [#30](https://github.com/Maviray/pdf/issues/30) P1.5 | Unicode data and NFC | In review, 2026-11-23. Plan: [issue 30](plans/2026-11-23-issue-30-unicode-data-nfc.md). Log: [issue 30](execution-logs/2026-11-23-issue-30-unicode-data-nfc.md) |
+| [#30](https://github.com/Maviray/pdf/issues/30) P1.5 | Unicode data and NFC | Merged 2026-11-24 in [#40](https://github.com/Maviray/pdf/pull/40). Plan: [issue 30](plans/2026-11-23-issue-30-unicode-data-nfc.md). Log: [issue 30](execution-logs/2026-11-23-issue-30-unicode-data-nfc.md) |
+| [#31](https://github.com/Maviray/pdf/issues/31) P1.6 | Line breaking | In review, 2026-11-23. Plan: [issue 31](plans/2026-11-23-issue-31-line-breaking.md). Log: [issue 31](execution-logs/2026-11-23-issue-31-line-breaking.md) |
+| [#32](https://github.com/Maviray/pdf/issues/32) P1.7 | Text layout | In review, 2026-11-23. Plan: [issue 32](plans/2026-11-23-issue-32-text-layout.md). Log: [issue 32](execution-logs/2026-11-23-issue-32-text-layout.md) |
+| [#33](https://github.com/Maviray/pdf/issues/33) P1.8 | Text gate | In review, 2026-11-24. Plan: [issue 33](plans/2026-11-24-issue-33-text-gate.md). Log: [issue 33](execution-logs/2026-11-24-issue-33-text-gate.md) |
 | P1 layout spec | Design of P1 Layout and fluent API and its six work items | Approved, 2026-11-23, merged in [#29](https://github.com/Maviray/pdf/pull/29). Design: [P1 Layout](specs/2026-11-23-p1-layout-design.md) |
+| [#34](https://github.com/Maviray/pdf/issues/34) P1.9 | Layout engine and canvas | In review, 2026-11-24. Plan: [issue 34](plans/2026-11-24-issue-34-layout-engine-canvas.md). Log: [issue 34](execution-logs/2026-11-24-issue-34-layout-engine-canvas.md) |
+| [#35](https://github.com/Maviray/pdf/issues/35) P1.10 | Containers | In review, 2026-11-24. Plan: [issue 35](plans/2026-11-24-issue-35-containers.md). Log: [issue 35](execution-logs/2026-11-24-issue-35-containers.md) |
+| [#36](https://github.com/Maviray/pdf/issues/36) P1.11 | Text element, styles and fonts | In review, 2026-11-24. Plan: [issue 36](plans/2026-11-24-issue-36-text-element-styles-fonts.md). Log: [issue 36](execution-logs/2026-11-24-issue-36-text-element-styles-fonts.md) |
+| [#37](https://github.com/Maviray/pdf/issues/37) P1.12 | Fluent API, settings and metadata | In review, 2026-11-24. Plan: [issue 37](plans/2026-11-24-issue-37-fluent-api.md). Log: [issue 37](execution-logs/2026-11-24-issue-37-fluent-api.md) |
+| [#38](https://github.com/Maviray/pdf/issues/38) P1.13 | Default fonts package | In review, 2026-11-24. Plan: [issue 38](plans/2026-11-24-issue-38-default-fonts-package.md). Log: [issue 38](execution-logs/2026-11-24-issue-38-default-fonts-package.md) |
 
 macOS Preview isn't checked in P0, because no Mac is available. The 0.1.0 release check covers it if a Mac is available by then, and otherwise records it as not checked.
 

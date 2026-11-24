@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Maviray.Pdf\Maviray.Pdf.csproj" />
+    <ProjectReference Include="..\..\src\Maviray.Pdf.Fonts.Default\Maviray.Pdf.Fonts.Default.csproj" />
   </ItemGroup>
 
   <ItemGroup>

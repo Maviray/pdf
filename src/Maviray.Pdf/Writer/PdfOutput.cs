@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Globalization;
+using System.Security.Cryptography;
 
 namespace Maviray.Pdf.Writer;
 
@@ -11,16 +12,21 @@ namespace Maviray.Pdf.Writer;
 internal sealed class PdfOutput : IDisposable
 {
     private readonly Stream _destination;
+    private readonly IncrementalHash? _hash;
     private byte[]? _buffer;
     private int _buffered;
 
-    public PdfOutput(Stream destination, int bufferSize = 65536)
+    /// <param name="destination">The stream the bytes go to.</param>
+    /// <param name="bufferSize">The buffer's size in bytes.</param>
+    /// <param name="hash">Whether to keep a SHA-256 of every byte, for <see cref="HashSoFar"/>.</param>
+    public PdfOutput(Stream destination, int bufferSize = 65536, bool hash = false)
     {
         ArgumentNullException.ThrowIfNull(destination);
         ArgumentOutOfRangeException.ThrowIfLessThan(bufferSize, 1);
 
         _destination = destination;
         _buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+        _hash = hash ? IncrementalHash.CreateHash(HashAlgorithmName.SHA256) : null;
     }
 
     private static ReadOnlySpan<byte> HexDigits => "0123456789ABCDEF"u8;
@@ -50,6 +56,7 @@ internal sealed class PdfOutput : IDisposable
 
         if (bytes.Length > buffer.Length)
         {
+            _hash?.AppendData(bytes);
             _destination.Write(bytes);
         }
         else
@@ -91,9 +98,23 @@ internal sealed class PdfOutput : IDisposable
         _destination.Flush();
     }
 
+    /// <summary>The SHA-256 of every byte written so far, which first go to the destination.</summary>
+    /// <exception cref="InvalidOperationException">The output wasn't made to hash.</exception>
+    public byte[] HashSoFar()
+    {
+        if (_hash is null)
+        {
+            throw new InvalidOperationException("This output doesn't keep a hash.");
+        }
+
+        WriteBuffered(CurrentBuffer());
+        return _hash.GetCurrentHash();
+    }
+
     /// <summary>Returns the buffer to the pool. Bytes that were never flushed are dropped.</summary>
     public void Dispose()
     {
+        _hash?.Dispose();
         if (_buffer is not null)
         {
             ArrayPool<byte>.Shared.Return(_buffer);
@@ -111,6 +132,7 @@ internal sealed class PdfOutput : IDisposable
     {
         if (_buffered > 0)
         {
+            _hash?.AppendData(buffer, 0, _buffered);
             _destination.Write(buffer, 0, _buffered);
             _buffered = 0;
         }

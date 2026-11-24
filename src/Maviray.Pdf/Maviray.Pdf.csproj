@@ -11,4 +11,20 @@
     <InternalsVisibleTo Include="Maviray.Pdf.Tests" />
   </ItemGroup>
 
+  <!-- The package version, for the PDF's /Producer (spec L-12), as a constant: reading it at run time would need reflection. -->
+  <Target Name="WritePackageVersion" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <PackageVersionFile>$(IntermediateOutputPath)PackageVersion.g.cs</PackageVersionFile>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="$(PackageVersionFile)"
+      Lines="// Written by the build from $(Version).;namespace Maviray.Pdf.Writer%3B;internal static class PackageVersion { public const string Value = &quot;$(Version)&quot;%3B }"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(PackageVersionFile)" />
+      <FileWrites Include="$(PackageVersionFile)" />
+    </ItemGroup>
+  </Target>
+
 </Project>

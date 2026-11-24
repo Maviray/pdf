@@ -210,7 +210,7 @@ internal sealed class ContentStreamBuilder : IDisposable
     /// <summary>Writes <c>Tj</c>: shows <paramref name="text"/> in the current standard font, encoded with WinAnsi.</summary>
     /// <exception cref="ArgumentException">A character has no WinAnsi code. Nothing is written then.</exception>
     /// <exception cref="InvalidOperationException">No text object is open, no font is set, or the font is an embedded
-    /// one, which <see cref="ShowGlyphs"/> draws.</exception>
+    /// one, which <see cref="ShowGlyphs(ReadOnlySpan{ushort})"/> draws.</exception>
     public ContentStreamBuilder ShowText(string text)
     {
         ThrowIfNotInText("ShowText (Tj)");
@@ -240,32 +240,93 @@ internal sealed class ContentStreamBuilder : IDisposable
     /// <exception cref="ArgumentException">A CID is 0 or one the font hasn't assigned. Nothing is written then.</exception>
     public ContentStreamBuilder ShowGlyphs(ReadOnlySpan<ushort> cids)
     {
-        ThrowIfNotInText("ShowGlyphs (Tj)");
-        if (_state.Font is not EmbeddedFont font)
-        {
-            throw new InvalidOperationException(_state.Font is null
-                ? "ShowGlyphs (Tj) needs a font. Call SetFont first."
-                : "ShowGlyphs (Tj) draws an embedded font. Draw a standard font with ShowText.");
-        }
-
-        foreach (var cid in cids)
-        {
-            if (!font.IsAssigned(cid))
-            {
-                throw new ArgumentException($"CID {cid} isn't one the font has assigned. Get CIDs from EmbeddedFont.Encode.", nameof(cids));
-            }
-        }
+        CheckGlyphs("ShowGlyphs (Tj)", cids);
 
         _output.WriteByte((byte)'<');
         foreach (var cid in cids)
         {
-            _output.WriteHex((byte)(cid >> 8));
-            _output.WriteHex((byte)cid);
+            WriteCid(cid);
         }
 
         _output.WriteByte((byte)'>');
         _output.WriteByte((byte)' ');
         return Operator("Tj"u8);
+    }
+
+    /// <summary>
+    /// Writes <c>TJ</c>: shows <paramref name="cids"/> in the current embedded font, with an extra advance in points
+    /// after each one (spec T-13). Each run of CIDs with no extra advance between them is one hex string, and an extra
+    /// advance d is written after its CID as -d * 1000 / the font size; an advance of 0 writes nothing. This is how
+    /// letter spacing is drawn, because <c>Tw</c> doesn't apply to two-byte codes.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">No text object is open, no font is set, the font is a standard one,
+    /// or an advance isn't 0 at font size 0.</exception>
+    /// <exception cref="ArgumentException">A CID is 0 or one the font hasn't assigned, or the two spans differ in
+    /// length. Nothing is written then.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">An advance isn't finite, or its number isn't one a PDF can hold.
+    /// Nothing is written then.</exception>
+    public ContentStreamBuilder ShowGlyphs(ReadOnlySpan<ushort> cids, ReadOnlySpan<double> extraAdvances)
+    {
+        CheckGlyphs("ShowGlyphs (TJ)", cids);
+        if (extraAdvances.Length != cids.Length)
+        {
+            throw new ArgumentException(
+                $"There are {cids.Length} CIDs and {extraAdvances.Length} extra advances. Give one advance per CID.", nameof(extraAdvances));
+        }
+
+        var size = _state.FontSize ?? 0;
+        foreach (var advance in extraAdvances)
+        {
+            if (!double.IsFinite(advance))
+            {
+                throw new ArgumentOutOfRangeException(nameof(extraAdvances), advance, "An extra advance must be a finite number of points.");
+            }
+
+            if (advance != 0)
+            {
+                if (size == 0)
+                {
+                    throw new InvalidOperationException("ShowGlyphs (TJ) can't write an extra advance at font size 0.");
+                }
+
+                Check(-advance * 1000 / size, nameof(extraAdvances));
+            }
+        }
+
+        _output.WriteByte((byte)'[');
+        var inString = false;
+        for (var i = 0; i < cids.Length; i++)
+        {
+            if (!inString)
+            {
+                _output.WriteByte((byte)'<');
+                inString = true;
+            }
+
+            WriteCid(cids[i]);
+            if (extraAdvances[i] == 0)
+            {
+                continue;
+            }
+
+            _output.WriteByte((byte)'>');
+            inString = false;
+            _output.WriteByte((byte)' ');
+            _output.WriteNumber(-extraAdvances[i] * 1000 / size);
+            if (i < cids.Length - 1)
+            {
+                _output.WriteByte((byte)' ');
+            }
+        }
+
+        if (inString)
+        {
+            _output.WriteByte((byte)'>');
+        }
+
+        _output.WriteByte((byte)']');
+        _output.WriteByte((byte)' ');
+        return Operator("TJ"u8);
     }
 
     /// <summary>Returns the content stream's bytes. The builder can't be used afterwards.</summary>
@@ -310,6 +371,32 @@ internal sealed class ContentStreamBuilder : IDisposable
 
         _pathOpen = false;
         return Operator(paintOperator);
+    }
+
+    // The checks both forms of ShowGlyphs make before writing anything.
+    private void CheckGlyphs(string operatorName, ReadOnlySpan<ushort> cids)
+    {
+        ThrowIfNotInText(operatorName);
+        if (_state.Font is not EmbeddedFont font)
+        {
+            throw new InvalidOperationException(_state.Font is null
+                ? $"{operatorName} needs a font. Call SetFont first."
+                : $"{operatorName} draws an embedded font. Draw a standard font with ShowText.");
+        }
+
+        foreach (var cid in cids)
+        {
+            if (!font.IsAssigned(cid))
+            {
+                throw new ArgumentException($"CID {cid} isn't one the font has assigned. Get CIDs from EmbeddedFont.Encode.", nameof(cids));
+            }
+        }
+    }
+
+    private void WriteCid(ushort cid)
+    {
+        _output.WriteHex((byte)(cid >> 8));
+        _output.WriteHex((byte)cid);
     }
 
     // Operands are checked before any of them is written, so a call that throws leaves the stream and the tracked state

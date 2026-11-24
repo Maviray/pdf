@@ -1,0 +1,2 @@
+static class Maviray.Pdf.DefaultFonts
+  static Maviray.Pdf.FontRegistry RegisterNotoSans(this Maviray.Pdf.FontRegistry registry)
