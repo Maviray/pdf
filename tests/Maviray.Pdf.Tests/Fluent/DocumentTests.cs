@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text;
 using Maviray.Pdf.Tests.Fonts;
 using Maviray.Pdf.Tests.Validation;
@@ -71,6 +72,38 @@ public sealed class DocumentTests
     }
 
     [Fact]
+    public void AFailedCleanupKeepsTheOriginalError()
+    {
+        var directory = Directory.CreateTempSubdirectory("maviray-save-");
+        try
+        {
+            var path = Path.Combine(directory.FullName, "rechnung.pdf");
+            var document = Document.Create(_ =>
+            {
+                // The temporary file exists while the callback runs. Windows can't delete a read-only file, so the
+                // cleanup fails, and the caller must still see the callback's error.
+                foreach (var file in directory.GetFiles("*.tmp"))
+                {
+                    file.Attributes |= FileAttributes.ReadOnly;
+                }
+
+                throw new InvalidOperationException("Absicht");
+            });
+
+            Assert.Equal("Absicht", Assert.Throws<InvalidOperationException>(() => document.Save(path)).Message);
+        }
+        finally
+        {
+            foreach (var file in directory.GetFiles())
+            {
+                file.Attributes = FileAttributes.Normal;
+            }
+
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public void ToBytesEqualsTheStream()
     {
         using var stream = new MemoryStream();
@@ -104,6 +137,18 @@ public sealed class DocumentTests
     {
         Assert.Equal(Hello(deterministic: true).ToBytes(), Hello(deterministic: true).ToBytes());
         Assert.NotEqual(Hello().ToBytes(), Hello().ToBytes());
+    }
+
+    [Fact]
+    public void DeterministicModeHashesTheFileId()
+    {
+        var file = Hello(deterministic: true).ToBytes();
+        var text = Latin1(file);
+        var trailer = text.LastIndexOf("trailer\n", StringComparison.Ordinal);
+
+        var expected = Convert.ToHexString(SHA256.HashData(file.AsSpan(0, trailer)).AsSpan(0, 16));
+
+        Assert.Contains($"/ID [<{expected}> <{expected}>]", text, StringComparison.Ordinal);
     }
 
     [Fact]

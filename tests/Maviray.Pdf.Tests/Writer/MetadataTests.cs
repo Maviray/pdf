@@ -68,6 +68,18 @@ public sealed class MetadataTests
         Assert.DoesNotContain("/ViewerPreferences", without, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void DisplayDocTitleFollowsTheTitleAlone()
+    {
+        var titleOnly = Text(Write(Full));
+        var languageOnly = Text(Write(Full with { Title = null }, language: "de-DE"));
+
+        Assert.Contains("/ViewerPreferences <</DisplayDocTitle true>>", titleOnly, StringComparison.Ordinal);
+        Assert.DoesNotContain("/Lang", titleOnly, StringComparison.Ordinal);
+        Assert.Contains("/Lang (de-DE)", languageOnly, StringComparison.Ordinal);
+        Assert.DoesNotContain("/ViewerPreferences", languageOnly, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(1, 0, "D:20261123140500+01'00'")]
     [InlineData(-5, -30, "D:20261123140500-05'30'")]

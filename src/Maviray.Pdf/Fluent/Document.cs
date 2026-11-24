@@ -36,7 +36,8 @@ public sealed class Document
 
     /// <summary>
     /// Writes the document to the file at <paramref name="path"/>: first to a temporary file beside it, which is moved
-    /// into place when generation succeeds. A failure deletes the temporary file and leaves any existing file unchanged.
+    /// into place when generation succeeds. A failure leaves any existing file unchanged and deletes the temporary file,
+    /// unless another program holds it.
     /// </summary>
     /// <param name="path">The file's path.</param>
     /// <exception cref="ArgumentException"><paramref name="path"/> is null or empty.</exception>
@@ -59,7 +60,7 @@ public sealed class Document
         }
         catch
         {
-            File.Delete(temporary);
+            DeleteQuietly(temporary);
             throw;
         }
     }
@@ -72,6 +73,22 @@ public sealed class Document
         using var stream = new MemoryStream();
         Generate(stream);
         return stream.ToArray();
+    }
+
+    // The cleanup after a failed save. Its own failure, such as another program holding the file, must not hide the
+    // error that made the save fail.
+    private static void DeleteQuietly(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     private void Generate(Stream output)
