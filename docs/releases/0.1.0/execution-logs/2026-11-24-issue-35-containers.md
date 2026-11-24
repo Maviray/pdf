@@ -53,3 +53,4 @@ The branch `feature/35-containers` is stacked on `feature/34-layout-engine-canva
     - SizeLimit, Padding and Border give `None` without the size they need, and the length checks are borrowed rather than shared.
   - **For P1.12:** chained alignments don't combine, because an outer Align draws the inner one at its measured size. P1.12's builders merge `.AlignRight().AlignBottom()` into one Align.
   - **For the user to decide:** a Background or Border in a Row cell covers the child's height, not the row's, as L-06 says. Invoice rows with cell backgrounds come out ragged. Changing it means drawing at the height given, and the engine drawing the content at its measured height.
+- **CI** on `e4043a5`, [run 45355791015](https://github.com/Maviray/pdf/actions/runs/45355791015): 956 of 956 tests passed, and without ICU the text tests passed 302 of 302.
