@@ -33,6 +33,13 @@ internal sealed class TestFontBuilder
     private ushort _macStyle;
     private int _italicAngle;
     private uint _isFixedPitch;
+    private short _typoAscender = 800;
+    private short _typoDescender = -200;
+    private short _typoLineGap;
+    private short _underlinePosition = -100;
+    private short _underlineThickness = 50;
+    private short _strikeoutSize;
+    private short _strikeoutPosition;
     private string? _postScriptName = "TestFont-Regular";
     private string? _family = "Test Font";
     private string? _subfamily = "Regular";
@@ -165,6 +172,18 @@ internal sealed class TestFontBuilder
         Set(() => (_os2Version, _weightClass, _fsSelection) = (version, weightClass, fsSelection));
 
     public TestFontBuilder MacStyle(ushort value) => Set(() => _macStyle = value);
+
+    /// <summary>OS/2 sTypoAscender, sTypoDescender and sTypoLineGap; 800, -200 and 0 by default.</summary>
+    public TestFontBuilder TypographicMetrics(short ascender, short descender, short lineGap) =>
+        Set(() => (_typoAscender, _typoDescender, _typoLineGap) = (ascender, descender, lineGap));
+
+    /// <summary>post underlinePosition and underlineThickness; -100 and 50 by default.</summary>
+    public TestFontBuilder Underline(short position, short thickness) =>
+        Set(() => (_underlinePosition, _underlineThickness) = (position, thickness));
+
+    /// <summary>OS/2 yStrikeoutSize and yStrikeoutPosition; 0 and 0 by default.</summary>
+    public TestFontBuilder Strikeout(short size, short position) =>
+        Set(() => (_strikeoutSize, _strikeoutPosition) = (size, position));
 
     /// <summary>The <c>post</c> header values: the angle is 16.16 fixed point.</summary>
     public TestFontBuilder Post(int italicAngleFixed, uint isFixedPitch) =>
@@ -371,12 +390,14 @@ internal sealed class TestFontBuilder
         BinaryPrimitives.WriteUInt16BigEndian(span[4..], _weightClass);
         BinaryPrimitives.WriteUInt16BigEndian(span[6..], 5); // usWidthClass: medium
         BinaryPrimitives.WriteUInt16BigEndian(span[8..], _fsType);
+        BinaryPrimitives.WriteInt16BigEndian(span[26..], _strikeoutSize); // yStrikeoutSize
+        BinaryPrimitives.WriteInt16BigEndian(span[28..], _strikeoutPosition); // yStrikeoutPosition
         BinaryPrimitives.WriteUInt16BigEndian(span[62..], _fsSelection);
         BinaryPrimitives.WriteUInt16BigEndian(span[64..], 0x20);
         BinaryPrimitives.WriteUInt16BigEndian(span[66..], 0x42);
-        BinaryPrimitives.WriteInt16BigEndian(span[68..], 800); // sTypoAscender
-        BinaryPrimitives.WriteInt16BigEndian(span[70..], -200); // sTypoDescender
-        BinaryPrimitives.WriteInt16BigEndian(span[72..], 0); // sTypoLineGap
+        BinaryPrimitives.WriteInt16BigEndian(span[68..], _typoAscender); // sTypoAscender
+        BinaryPrimitives.WriteInt16BigEndian(span[70..], _typoDescender); // sTypoDescender
+        BinaryPrimitives.WriteInt16BigEndian(span[72..], _typoLineGap); // sTypoLineGap
         BinaryPrimitives.WriteUInt16BigEndian(span[74..], 900); // usWinAscent
         BinaryPrimitives.WriteUInt16BigEndian(span[76..], 250); // usWinDescent
         if (_os2Version >= 2)
@@ -394,8 +415,8 @@ internal sealed class TestFontBuilder
         var span = bytes.AsSpan();
         BinaryPrimitives.WriteUInt32BigEndian(span, 0x00030000);
         BinaryPrimitives.WriteInt32BigEndian(span[4..], _italicAngle);
-        BinaryPrimitives.WriteInt16BigEndian(span[8..], -100); // underlinePosition
-        BinaryPrimitives.WriteInt16BigEndian(span[10..], 50); // underlineThickness
+        BinaryPrimitives.WriteInt16BigEndian(span[8..], _underlinePosition); // underlinePosition
+        BinaryPrimitives.WriteInt16BigEndian(span[10..], _underlineThickness); // underlineThickness
         BinaryPrimitives.WriteUInt32BigEndian(span[12..], _isFixedPitch);
         return bytes;
     }
