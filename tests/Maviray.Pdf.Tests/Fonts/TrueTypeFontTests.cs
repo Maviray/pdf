@@ -42,6 +42,40 @@ public sealed class TrueTypeFontTests
     }
 
     [Fact]
+    public void ReadsStrikeoutAndTypoMetricsFlag()
+    {
+        var font = TrueTypeFont.Load(new TestFontBuilder().Strikeout(50, 300).Os2(4, 400, 0x00C0).Build());
+
+        Assert.Equal(50, font.StrikeoutSize);
+        Assert.Equal(300, font.StrikeoutPosition);
+        Assert.True(font.UseTypographicMetrics);
+    }
+
+    [Fact]
+    public void NoOs2MeansNoStrikeout()
+    {
+        var font = TrueTypeFont.Load(new TestFontBuilder().Without("OS/2").Build());
+
+        Assert.Null(font.StrikeoutSize);
+        Assert.Null(font.StrikeoutPosition);
+        Assert.False(font.UseTypographicMetrics);
+    }
+
+    // The values the P1 Text spec quotes for Noto Sans Regular (T-08, T-11).
+    [Fact]
+    public void NotoSansRegularMatchesTheSpec()
+    {
+        var font = TestFonts.NotoSans("Regular");
+
+        Assert.Equal(50, font.StrikeoutSize);
+        Assert.Equal(322, font.StrikeoutPosition);
+        Assert.Equal(-100, font.UnderlinePosition);
+        Assert.Equal(50, font.UnderlineThickness);
+        Assert.Equal(new LineMetrics(1069, -293, 0), font.TypographicMetrics);
+        Assert.True(font.UseTypographicMetrics);
+    }
+
+    [Fact]
     public void AdvancesPastNumberOfHMetricsRepeatTheLast()
     {
         var font = TrueTypeFont.Load(new TestFontBuilder().NumberOfHMetrics(2).Build());

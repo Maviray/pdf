@@ -4,7 +4,8 @@ Usage:
     fonttools_check.py dump <font>
     fonttools_check.py subset <original font> <subset> <glyph ids file>
 
-dump prints, as JSON, the font's unitsPerEm, numGlyphs, hhea ascender and descender, OS/2 fsType, and the glyph ID
+dump prints, as JSON, the font's unitsPerEm, numGlyphs, hhea ascender and descender, OS/2 fsType, yStrikeoutSize,
+yStrikeoutPosition and USE_TYPO_METRICS (fsSelection bit 7), and the glyph ID
 and advance width of every code point in its best cmap, leaving out code points mapped to glyph 0.
 
 subset loads the subset with checksum errors raised and decompiles every table. The ids file holds, space-separated,
@@ -36,6 +37,9 @@ def dump(path):
         "ascender": font["hhea"].ascent,
         "descender": font["hhea"].descent,
         "fsType": font["OS/2"].fsType if "OS/2" in font else 0,
+        "strikeoutSize": font["OS/2"].yStrikeoutSize if "OS/2" in font else 0,
+        "strikeoutPosition": font["OS/2"].yStrikeoutPosition if "OS/2" in font else 0,
+        "useTypoMetrics": bool(font["OS/2"].fsSelection & 0x80) if "OS/2" in font else False,
         "cmap": cmap,
     }
     json.dump(result, sys.stdout, ensure_ascii=True)

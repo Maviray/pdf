@@ -5,7 +5,7 @@ namespace Maviray.Pdf.Tests.Validation;
 
 /// <summary>
 /// What fontTools reads from a font (spec F-13): header values from <c>head</c>, <c>maxp</c>, <c>hhea</c> and
-/// <c>OS/2</c>, and the glyph and advance width of every code point in the best <c>cmap</c>, without glyph 0.
+/// <c>OS/2</c> (with the strikeout and USE_TYPO_METRICS, spec T-12), and the glyph and advance width of every code point in the best <c>cmap</c>, without glyph 0.
 /// </summary>
 internal sealed record FontDump(
     int UnitsPerEm,
@@ -13,6 +13,9 @@ internal sealed record FontDump(
     int Ascender,
     int Descender,
     int FsType,
+    int StrikeoutSize,
+    int StrikeoutPosition,
+    bool UseTypoMetrics,
     IReadOnlyDictionary<int, (int GlyphId, int Advance)> Cmap)
 {
     public static FontDump Parse(string json)
@@ -32,6 +35,9 @@ internal sealed record FontDump(
             root.GetProperty("ascender").GetInt32(),
             root.GetProperty("descender").GetInt32(),
             root.GetProperty("fsType").GetInt32(),
+            root.GetProperty("strikeoutSize").GetInt32(),
+            root.GetProperty("strikeoutPosition").GetInt32(),
+            root.GetProperty("useTypoMetrics").GetBoolean(),
             cmap);
     }
 }
