@@ -9,11 +9,22 @@ namespace Maviray.Pdf.Tests.Invoice;
 /// The P1 layout gate (L-17): the driving invoice, ten pages of it, with every check. The file is saved as
 /// <c>InvoiceGatePassesEveryCheck.pdf</c>, with the strings page 1 must copy out beside it as
 /// <c>InvoiceGatePassesEveryCheck.txt</c>. <c>docs/qa/checklists/viewer-check.md</c> describes the file for the check by
-/// hand.
+/// hand. Keep this test's name, the layout and the checklist in step: the test pins the items on each page and the
+/// totals the checklist states.
 /// </summary>
 public sealed class InvoiceGateTests
 {
     private const int Pages = 10;
+
+    // Each page's first and last item, as the checklist states them.
+    private static readonly (int First, int Last)[] PageItems =
+        [(1, 35), (36, 75), (76, 115), (116, 155), (156, 195), (196, 235), (236, 275), (276, 315), (316, 355), (356, 385)];
+
+    // The totals on page 10, as the checklist states them.
+    private static readonly string[] Totals =
+        ["Nettobetrag", "122.279,80 €", "Umsatzsteuer 19 %", "22.291,39 €", "Umsatzsteuer 7 %", "346,97 €", "Gesamtbetrag", "144.918,16 €"];
+
+    private static readonly Regex Lot = new(@", Los (\d{3})", RegexOptions.CultureInvariant);
 
     // The column headings on one line, in order, as pdftotext's physical layout writes them.
     private static readonly Regex HeadingLine = new(
@@ -40,6 +51,7 @@ public sealed class InvoiceGateTests
             var page = pages[n - 1];
             Assert.Contains(invoice.Seller.Name, page, StringComparison.Ordinal);
             Assert.Contains($"Rechnung {invoice.Number}", page, StringComparison.Ordinal);
+            Assert.Contains($"Rechnungsdatum: {invoice.Date}", page, StringComparison.Ordinal);
             Assert.Matches(HeadingLine, page);
             Assert.Contains($"Seite {n} von {Pages}", page, StringComparison.Ordinal);
             Assert.Contains(invoice.Bank, page, StringComparison.Ordinal);
@@ -53,12 +65,16 @@ public sealed class InvoiceGateTests
         {
             var at = all.IndexOf(item.Description, from, StringComparison.Ordinal);
             Assert.True(at >= 0, $"Item {item.Position}, '{item.Description}', is missing or out of order.");
-            Assert.True(at == all.LastIndexOf(item.Description, StringComparison.Ordinal), $"Item {item.Position} appears twice.");
+            Assert.True(
+                at == all.IndexOf(item.Description, StringComparison.Ordinal) && at == all.LastIndexOf(item.Description, StringComparison.Ordinal),
+                $"Item {item.Position} appears twice.");
             from = at + item.Description.Length;
         }
 
-        string[] totals = ["Nettobetrag", "Umsatzsteuer 19 %", "Umsatzsteuer 7 %", "Gesamtbetrag", InvoiceAmounts.Format(invoice.Gross)];
-        Assert.All(totals, total => Assert.Contains(total, pages[^1], StringComparison.Ordinal));
+        var lots = pages.Select(page => Lot.Matches(page).Select(match => int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture)).ToList());
+        Assert.Equal(PageItems, lots.Select(page => (page[0], page[^1])));
+        Assert.All(Totals, total => Assert.Contains(total, pages[^1], StringComparison.Ordinal));
+        Assert.Contains(InvoiceAmounts.Format(invoice.Gross), pages[^1], StringComparison.Ordinal);
         Assert.All(pages[..^1], page => Assert.DoesNotContain("Nettobetrag", page, StringComparison.Ordinal));
         Assert.All(pageOne, value => Assert.Contains(value, pages[0], StringComparison.Ordinal));
 
