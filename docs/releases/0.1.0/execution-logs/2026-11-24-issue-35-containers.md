@@ -54,3 +54,11 @@ The branch `feature/35-containers` is stacked on `feature/34-layout-engine-canva
   - **For P1.12:** chained alignments don't combine, because an outer Align draws the inner one at its measured size. P1.12's builders merge `.AlignRight().AlignBottom()` into one Align.
   - **For the user to decide:** a Background or Border in a Row cell covers the child's height, not the row's, as L-06 says. Invoice rows with cell backgrounds come out ragged. Changing it means drawing at the height given, and the engine drawing the content at its measured height.
 - **CI** on `e4043a5`, [run 45355791015](https://github.com/Maviray/pdf/actions/runs/45355791015): 956 of 956 tests passed, and without ICU the text tests passed 302 of 302.
+- **The maintainer's decision on cell backgrounds,** asked after the review: cells stretch, and that can be turned off.
+  - A Background or Border now fills the height it is drawn at, so a Row's cells line up to the row's height. `stretch: false` keeps the effect on the child's height. L-02 and L-06 are amended, with a dated note.
+  - In a Column item or under an alignment, the height drawn at is the child's own, so only Row cells and the page's top-level content change.
+  - Tests:
+    - `ABackgroundStretchesToTheSpaceItIsDrawnInFirst` and `ABorderDrawsTheChildThenFourBandsAroundTheSpace` failed first;
+    - `ARowCellsBackgroundStretchesToTheRowsHeight` gives 100 × 40, and 100 × 10 without stretching;
+    - the contained variants keep the old values.
+  - **Full suite:** Release, 959 tests, all passed.
