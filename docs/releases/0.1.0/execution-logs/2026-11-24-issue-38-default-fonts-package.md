@@ -57,3 +57,4 @@ The branch `feature/38-default-fonts-package` is stacked on `feature/37-fluent-a
     - the stream copies happen once per registration;
     - the README's "one assembly" still describes the core;
     - two tests fill `FontRegistry.Default`, which no test expects to be empty.
+- **CI** on `cc86f3f`, [run 45374669525](https://github.com/Maviray/pdf/actions/runs/45374669525): 1,142 of 1,142 tests passed, and without ICU the text tests passed 306 of 306. The PR is [#48](https://github.com/Maviray/pdf/pull/48).
