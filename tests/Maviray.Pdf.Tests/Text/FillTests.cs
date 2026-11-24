@@ -84,7 +84,7 @@ public sealed class FillTests
     [Fact]
     public void ACutDrawsNoHyphenInNotoSans()
     {
-        var style = new TextStyle(Fonts.TestFonts.NotoSans("Regular"), 10);
+        var style = new SpanStyle(Fonts.TestFonts.NotoSans("Regular"), 10);
         var layout = Fill("Kunden" + SoftHyphen + "nummer", 38, style);
 
         Assert.Equal("Kunden" + SoftHyphen, layout.Source.Text.Substring(layout.Lines[0].Start, layout.Lines[0].Length));
@@ -198,10 +198,10 @@ public sealed class FillTests
         Assert.Equal(35, Fill("aa bb cc\ndd", double.PositiveInfinity).Width);
     }
 
-    private static PreparedParagraph Prepare(string text, TextStyle? style = null) =>
+    private static PreparedParagraph Prepare(string text, SpanStyle? style = null) =>
         PreparedParagraph.Prepare(new Paragraph([new TextSpan(text, style ?? LayoutTestFont.Style())]));
 
-    private static TextLayout Fill(string text, double width, TextStyle? style = null) => Prepare(text, style).Fill(width);
+    private static TextLayout Fill(string text, double width, SpanStyle? style = null) => Prepare(text, style).Fill(width);
 
     private static void AssertLines(TextLayout layout, params (string Text, double Width)[] expected)
     {

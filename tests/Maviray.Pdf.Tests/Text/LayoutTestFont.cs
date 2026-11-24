@@ -58,7 +58,7 @@ internal static class LayoutTestFont
     }
 
     /// <summary>A style over the shared font, or over <paramref name="font"/>.</summary>
-    public static TextStyle Style(
+    public static SpanStyle Style(
         double size = 10,
         double? lineHeight = null,
         double letterSpacing = 0,

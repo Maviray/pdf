@@ -217,7 +217,7 @@ public sealed class TextGateTests
     /// <summary>Each line end of the prose filled at <paramref name="width"/> that falls inside one of <paramref name="sequences"/>.</summary>
     private static IEnumerable<string> LineEndsInside(string prose, string[] sequences, double width)
     {
-        var layout = PreparedParagraph.Prepare(new Paragraph([new TextSpan(prose, new TextStyle(Regular, 10, TextGateText.LineHeight))])).Fill(width);
+        var layout = PreparedParagraph.Prepare(new Paragraph([new TextSpan(prose, new SpanStyle(Regular, 10, TextGateText.LineHeight))])).Fill(width);
         var text = layout.Source.Text;
         foreach (var line in layout.Lines)
         {
@@ -240,7 +240,7 @@ public sealed class TextGateTests
     /// <summary>The six paragraphs of the plan, in order, each with its width.</summary>
     private static (Paragraph Paragraph, double Width)[] Paragraphs()
     {
-        var style = new TextStyle(Regular, 10, TextGateText.LineHeight);
+        var style = new SpanStyle(Regular, 10, TextGateText.LineHeight);
         return
         [
             (new Paragraph([new TextSpan(TextGateText.Prose, style)]), 220),

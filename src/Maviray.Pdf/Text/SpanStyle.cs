@@ -6,7 +6,7 @@ namespace Maviray.Pdf.Text;
 /// The values of a span that decide its geometry (spec T-14). Colour isn't one of them: a layout refers to spans by
 /// index, and the drawing side looks up their colour. A style is immutable.
 /// </summary>
-internal sealed class TextStyle
+internal sealed class SpanStyle
 {
     /// <param name="font">The font, which gives every glyph of the span.</param>
     /// <param name="size">The font size in points, positive and finite.</param>
@@ -16,7 +16,7 @@ internal sealed class TextStyle
     /// negative (T-10).</param>
     /// <param name="underline">Whether the span is underlined (T-11).</param>
     /// <param name="strikethrough">Whether the span is struck through (T-11).</param>
-    public TextStyle(
+    public SpanStyle(
         TrueTypeFont font,
         double size,
         double? lineHeight = null,

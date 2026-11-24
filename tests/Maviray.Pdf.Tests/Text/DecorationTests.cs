@@ -77,7 +77,7 @@ public sealed class DecorationTests
     [Fact]
     public void NotoSansRegularMatchesTheSpec()
     {
-        var style = new TextStyle(TestFonts.NotoSans("Regular"), 10, underline: true, strikethrough: true);
+        var style = new SpanStyle(TestFonts.NotoSans("Regular"), 10, underline: true, strikethrough: true);
         var line = Fill(("Ab", style));
         var underline = line.Decorations.Single(d => d.Kind == DecorationKind.Underline);
         var strikethrough = line.Decorations.Single(d => d.Kind == DecorationKind.Strikethrough);
@@ -89,6 +89,6 @@ public sealed class DecorationTests
         Assert.Equal(10.69, line.Baseline, 9);
     }
 
-    private static TextLine Fill(params (string Text, TextStyle Style)[] spans) =>
+    private static TextLine Fill(params (string Text, SpanStyle Style)[] spans) =>
         PreparedParagraph.Prepare(new Paragraph(spans.Select(s => new TextSpan(s.Text, s.Style)))).Fill(1000).Lines[0];
 }

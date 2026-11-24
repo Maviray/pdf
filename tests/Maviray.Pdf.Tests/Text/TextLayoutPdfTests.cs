@@ -25,9 +25,9 @@ public sealed class TextLayoutPdfTests
     {
         var regular = TestFonts.NotoSans("Regular");
         var paragraph = PreparedParagraph.Prepare(new Paragraph([
-            new TextSpan(German(Prose), new TextStyle(regular, 10)),
-            new TextSpan(German(Underlined), new TextStyle(regular, 10, underline: true)),
-            new TextSpan(German(Spaced), new TextStyle(regular, 10, letterSpacing: 0.5)),
+            new TextSpan(German(Prose), new SpanStyle(regular, 10)),
+            new TextSpan(German(Underlined), new SpanStyle(regular, 10, underline: true)),
+            new TextSpan(German(Spaced), new SpanStyle(regular, 10, letterSpacing: 0.5)),
         ]));
         var layout = paragraph.Fill(200);
 

@@ -96,7 +96,7 @@ public sealed class GreedyLineCheckTests
         Assert.Equal(shifted, problems.Count(problem => problem.Contains("offset", StringComparison.Ordinal)));
     }
 
-    private static TextStyle Style() => new(Regular, 10, TextGateText.LineHeight);
+    private static SpanStyle Style() => new(Regular, 10, TextGateText.LineHeight);
 
     /// <summary>A layout of <paramref name="prepared"/> with the given line ranges, each 0 wide at offset 0, with no glyphs.</summary>
     private static TextLayout Layout(PreparedParagraph prepared, params (int Start, int Length)[] ranges) => new(

@@ -58,7 +58,7 @@ public sealed class PreparedParagraphTests
     public void DefaultIgnorablesDrawNothingEvenWhenTheFontMapsThem(int codePoint)
     {
         var noto = PreparedParagraph.Prepare(new Paragraph([
-            new TextSpan("a" + char.ConvertFromUtf32(codePoint), new TextStyle(Fonts.TestFonts.NotoSans("Regular"), 10)),
+            new TextSpan("a" + char.ConvertFromUtf32(codePoint), new SpanStyle(Fonts.TestFonts.NotoSans("Regular"), 10)),
         ]));
         var mapped = PreparedParagraph.Prepare(new Paragraph([
             new TextSpan("a" + char.ConvertFromUtf32(codePoint), LayoutTestFont.Style(font: LayoutTestFont.Create(b => b.Map(codePoint, LayoutTestFont.Letter)))),

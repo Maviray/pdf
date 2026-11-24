@@ -41,7 +41,7 @@ internal static class TextGateText
     /// </summary>
     public static IReadOnlyList<TextSpan> MixedSpans(TrueTypeFont regular, TrueTypeFont bold, TrueTypeFont italic)
     {
-        TextStyle Style(TrueTypeFont font, double size = 10, double letterSpacing = 0, bool underline = false, bool strikethrough = false) =>
+        SpanStyle Style(TrueTypeFont font, double size = 10, double letterSpacing = 0, bool underline = false, bool strikethrough = false) =>
             new(font, size, LineHeight, letterSpacing, underline, strikethrough);
 
         return

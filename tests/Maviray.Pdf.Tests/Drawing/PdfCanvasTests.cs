@@ -75,7 +75,7 @@ public sealed class PdfCanvasTests
     [Fact]
     public void ATextLineIsDrawnAtItsBaselineWithItsExtraAdvances()
     {
-        var layout = Layout(new TextSpan("Ab", new TextStyle(LayoutTestFont.Font, 10, letterSpacing: 1)));
+        var layout = Layout(new TextSpan("Ab", new SpanStyle(LayoutTestFont.Font, 10, letterSpacing: 1)));
         var line = layout.Lines[0];
 
         var file = Draw(canvas => canvas.DrawTextLine(layout, 0, 72, 100, [Blue]));
@@ -87,7 +87,7 @@ public sealed class PdfCanvasTests
     [Fact]
     public void ATextLineFollowsTheOffset()
     {
-        var layout = Layout(new TextSpan("Ab", new TextStyle(LayoutTestFont.Font, 10)));
+        var layout = Layout(new TextSpan("Ab", new SpanStyle(LayoutTestFont.Font, 10)));
         var line = layout.Lines[0];
 
         var file = Draw(canvas =>
@@ -104,8 +104,8 @@ public sealed class PdfCanvasTests
     public void ADecorationIsAFilledRectangleInItsSpansColour()
     {
         var layout = Layout(
-            new TextSpan("Ab ", new TextStyle(LayoutTestFont.Font, 10)),
-            new TextSpan("cd", new TextStyle(LayoutTestFont.Font, 10, underline: true)));
+            new TextSpan("Ab ", new SpanStyle(LayoutTestFont.Font, 10)),
+            new TextSpan("cd", new SpanStyle(LayoutTestFont.Font, 10, underline: true)));
         var underline = Assert.Single(layout.Lines[0].Decorations);
 
         var file = Draw(canvas => canvas.DrawTextLine(layout, 0, 72, 100, [Blue, Red]));
@@ -122,7 +122,7 @@ public sealed class PdfCanvasTests
     [Fact]
     public void EachFontIsEmbeddedOnce()
     {
-        var layout = Layout(new TextSpan("Ab", new TextStyle(LayoutTestFont.Font, 10)));
+        var layout = Layout(new TextSpan("Ab", new SpanStyle(LayoutTestFont.Font, 10)));
 
         var file = Latin1(PdfDocumentWriterTests.Write(document =>
         {
@@ -142,7 +142,7 @@ public sealed class PdfCanvasTests
     [Fact]
     public void ALineNeedsAColourForEverySpan()
     {
-        var layout = Layout(new TextSpan("Ab", new TextStyle(LayoutTestFont.Font, 10)));
+        var layout = Layout(new TextSpan("Ab", new SpanStyle(LayoutTestFont.Font, 10)));
 
         Draw(canvas => Assert.Throws<ArgumentException>(() => canvas.DrawTextLine(layout, 0, 0, 0, [])));
     }

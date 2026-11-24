@@ -609,7 +609,7 @@ internal sealed class PreparedParagraph
     /// Adds the glyphs of one code point by T-07's rules, in order, and returns whether it is missing from the font.
     /// A soft hyphen draws nothing here: filling decides whether its line ends at it.
     /// </summary>
-    private static bool Resolve(int codePoint, TextStyle style, List<PreparedGlyph> glyphs, Span<int> decomposition)
+    private static bool Resolve(int codePoint, SpanStyle style, List<PreparedGlyph> glyphs, Span<int> decomposition)
     {
         var font = style.Font;
         if (IsBreakCharacter(codePoint) || codePoint == SoftHyphen)

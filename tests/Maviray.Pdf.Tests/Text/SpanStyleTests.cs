@@ -3,7 +3,7 @@ using Maviray.Pdf.Text;
 namespace Maviray.Pdf.Tests.Text;
 
 // A style holds the values that decide geometry, and refuses invalid ones by name (spec T-14).
-public sealed class TextStyleTests
+public sealed class SpanStyleTests
 {
     [Theory]
     [InlineData(0)]
@@ -12,7 +12,7 @@ public sealed class TextStyleTests
     [InlineData(double.PositiveInfinity)]
     public void RefusesASizeThatIsntPositiveAndFinite(double size)
     {
-        var error = Assert.Throws<ArgumentOutOfRangeException>(() => new TextStyle(LayoutTestFont.Font, size));
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => new SpanStyle(LayoutTestFont.Font, size));
 
         Assert.Equal("size", error.ParamName);
     }
@@ -24,7 +24,7 @@ public sealed class TextStyleTests
     [InlineData(double.PositiveInfinity)]
     public void RefusesALineHeightThatIsntPositiveAndFinite(double lineHeight)
     {
-        var error = Assert.Throws<ArgumentOutOfRangeException>(() => new TextStyle(LayoutTestFont.Font, 10, lineHeight));
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => new SpanStyle(LayoutTestFont.Font, 10, lineHeight));
 
         Assert.Equal("lineHeight", error.ParamName);
     }
@@ -34,7 +34,7 @@ public sealed class TextStyleTests
     [InlineData(double.NegativeInfinity)]
     public void RefusesALetterSpacingThatIsntFinite(double letterSpacing)
     {
-        var error = Assert.Throws<ArgumentOutOfRangeException>(() => new TextStyle(LayoutTestFont.Font, 10, null, letterSpacing));
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => new SpanStyle(LayoutTestFont.Font, 10, null, letterSpacing));
 
         Assert.Equal("letterSpacing", error.ParamName);
     }
@@ -42,13 +42,13 @@ public sealed class TextStyleTests
     [Fact]
     public void RefusesNoFont()
     {
-        Assert.Throws<ArgumentNullException>(() => new TextStyle(null!, 10));
+        Assert.Throws<ArgumentNullException>(() => new SpanStyle(null!, 10));
     }
 
     [Fact]
     public void KeepsItsValues()
     {
-        var style = new TextStyle(LayoutTestFont.Font, 12, 1.5, -0.25, underline: true, strikethrough: true);
+        var style = new SpanStyle(LayoutTestFont.Font, 12, 1.5, -0.25, underline: true, strikethrough: true);
 
         Assert.Same(LayoutTestFont.Font, style.Font);
         Assert.Equal(12, style.Size);

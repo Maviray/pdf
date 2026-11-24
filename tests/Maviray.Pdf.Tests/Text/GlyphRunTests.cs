@@ -87,7 +87,7 @@ public sealed class GlyphRunTests
         Assert.Equal(new PositionedGlyph(LayoutTestFont.Space, 0x09, 5, 0), tab[1]);
     }
 
-    private static TextLayout Fill((string Text, TextStyle Style)[] spans, double width, TextAlignment alignment = TextAlignment.Left) =>
+    private static TextLayout Fill((string Text, SpanStyle Style)[] spans, double width, TextAlignment alignment = TextAlignment.Left) =>
         PreparedParagraph.Prepare(new Paragraph(spans.Select(s => new TextSpan(s.Text, s.Style)), alignment)).Fill(width);
 
     private static List<PositionedGlyph> Glyphs(TextLayout layout) => [.. layout.Lines[0].Runs.SelectMany(r => r.Glyphs)];

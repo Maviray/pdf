@@ -3,7 +3,7 @@ namespace Maviray.Pdf.Text;
 /// <summary>A run of text in one style (spec T-14).</summary>
 internal sealed class TextSpan
 {
-    public TextSpan(string text, TextStyle style)
+    public TextSpan(string text, SpanStyle style)
     {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(style);
@@ -14,5 +14,5 @@ internal sealed class TextSpan
     /// <summary>The span's text as given; preparation cleans and normalizes it (T-03).</summary>
     public string Text { get; }
 
-    public TextStyle Style { get; }
+    public SpanStyle Style { get; }
 }
