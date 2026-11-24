@@ -34,7 +34,7 @@ The branch `feature/34-layout-engine-canvas` is stacked on `feature/33-text-gate
 - **Whole-branch review** by a fresh reviewer: merge with fixes, none of them critical.
   - It ran the suite with every validator, and probes and mutants in a worktree it removed afterwards. It installed nothing.
   - It confirmed the passes, the reset before every pass, the y flip everywhere, the paths, and that `LayoutException` is the only public type.
-  - **Fixed, each with a test that failed first:**
+  - **Fixed.** Each was seen failing first, except the pass limit, whose new assertion was seen failing under a limit of 4:
     - **A draw that finishes an element didn't count as progress.** A stack moving past a finished child whose draw returned false threw "split across pages but drew nothing" on a valid document. P1.10's Column would have copied it.
       - `Element.Draw`'s contract now says a draw after `Full` advances, and that a container advanced if a child advanced or its cursor moved.
       - `ElementContract` checks it, and `MovingPastAFinishedChildCountsAsProgress` pages the reviewer's case onto two pages.
@@ -57,3 +57,4 @@ The branch `feature/34-layout-engine-canvas` is stacked on `feature/33-text-gate
     - two `TrueTypeFont` instances of one file embed twice. Font identity is the registry's (L-09).
     - containers that measure their children again in `Draw` cost more with depth. That is P1.10's and P1.11's design.
     - a header whose height changes per page makes "the content's `None` always throws" slightly strict. The engine follows L-04 as written.
+- **CI** on `5b1d71a`, [run 45350535956](https://github.com/Maviray/pdf/actions/runs/45350535956): 862 of 862 tests passed, and without ICU the text tests passed 302 of 302.
