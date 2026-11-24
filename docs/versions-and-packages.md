@@ -2,7 +2,7 @@
 
 Status: 2026-11-24
 
-This page covers how the two NuGet packages, `Maviray.Pdf` and `Maviray.Pdf.Fonts.Default`, are built, versioned and published. Both are packed from the same commit and carry the same version. The workflow is [`.github/workflows/publish-nuget.yml`](../.github/workflows/publish-nuget.yml), and the version rules are in [`GitVersion.yml`](../GitVersion.yml).
+This page covers how the two NuGet packages, `Maviray.Pdf` and `Maviray.Pdf.Fonts.Default`, are built, versioned and published. Both are packed from the same commit and carry the same version, and `Maviray.Pdf.Fonts.Default` depends on exactly that version of `Maviray.Pdf`, so the two are always upgraded together. The workflow is [`.github/workflows/publish-nuget.yml`](../.github/workflows/publish-nuget.yml), and the version rules are in [`GitVersion.yml`](../GitVersion.yml).
 
 ## Where packages go
 

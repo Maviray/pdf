@@ -6,7 +6,8 @@ using Maviray.Pdf.Tests.Validation;
 namespace Maviray.Pdf.Tests.FontsDefault;
 
 // The two packages (L-15): `dotnet pack` builds both from the build this test run uses, and each carries what the spec
-// lists. The default fonts package depends on Maviray.Pdf at its own version, and holds its fonts only inside its DLL.
+// lists. The default fonts package depends on Maviray.Pdf at exactly its own version, and holds its fonts only inside
+// its DLL.
 public sealed class PackageTests
 {
     private const string Version = "9.9.9-pack";
@@ -34,7 +35,7 @@ public sealed class PackageTests
             Assert.Superset(Set("lib/net10.0/Maviray.Pdf.dll", "README.md", "LICENSE", "THIRD-PARTY-NOTICES.md"), coreEntries);
             Assert.Superset(Set("lib/net10.0/Maviray.Pdf.Fonts.Default.dll", "README.md", "LICENSE", "THIRD-PARTY-NOTICES.md", "OFL.txt"), fontEntries);
             Assert.DoesNotContain(fontEntries, entry => entry.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase));
-            Assert.Equal([("Maviray.Pdf", Version)], Dependencies(fonts.GetEntry("Maviray.Pdf.Fonts.Default.nuspec")!));
+            Assert.Equal([("Maviray.Pdf", $"[{Version}]")], Dependencies(fonts.GetEntry("Maviray.Pdf.Fonts.Default.nuspec")!));
         }
         finally
         {

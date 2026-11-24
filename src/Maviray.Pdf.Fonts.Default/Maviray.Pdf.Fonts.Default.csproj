@@ -11,6 +11,18 @@
     <ProjectReference Include="..\Maviray.Pdf\Maviray.Pdf.csproj" />
   </ItemGroup>
 
+  <!--
+    Pins that dependency to exactly this package's version, [X], instead of NuGet's "X or later". Both packages ship
+    together at one version, and before 1.0.0 any release may change the API RegisterNotoSans calls, which would only
+    fail at run time. NuGet's pack targets have no public setting for a project reference's range, so this rewrites the
+    versions they collect; PackageTests fails if a later SDK stops honouring it.
+  -->
+  <Target Name="PinMavirayPdfVersion" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <!-- The four Noto Sans faces (spec F-12), embedded under their file names. -->
     <EmbeddedResource Include="Fonts\NotoSans-*.ttf" LogicalName="%(Filename)%(Extension)" />
