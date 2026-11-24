@@ -74,6 +74,45 @@ public sealed class ContentStreamGlyphsTests : IDisposable
         Assert.Contains("another document", error.Message, StringComparison.Ordinal);
     }
 
+    // The TJ form (spec T-13): each extra advance d is written as -d * 1000 / size after its CID, and a zero writes
+    // nothing. The spec's own example is the first case.
+    [Fact]
+    public void ShowGlyphsWithAdvancesWritesTj()
+    {
+        _font.Encode(1, ' ');
+        using var builder = new ContentStreamBuilder(_fonts);
+
+        builder.BeginText().SetFont(_font, 10)
+            .ShowGlyphs([1, 2, 3], [0, 0.5, 0])
+            .ShowGlyphs([1, 2, 3], [0, 0, 0])
+            .ShowGlyphs([1, 2], [-0.25, 0])
+            .ShowGlyphs([1, 2], [0, 0.5])
+            .EndText();
+
+        Assert.Equal(
+            "BT\n/F1 10 Tf\n[<00010002> -50 <0003>] TJ\n[<000100020003>] TJ\n[<0001> 25 <0002>] TJ\n[<00010002> -50] TJ\nET\n",
+            Finish(builder));
+    }
+
+    [Fact]
+    public void ShowGlyphsWithAdvancesRefusals()
+    {
+        using var builder = new ContentStreamBuilder(_fonts);
+
+        builder.BeginText();
+        Assert.Throws<InvalidOperationException>(() => builder.ShowGlyphs([1], [0]));
+        builder.SetFont(_font, 12);
+        Assert.Throws<ArgumentException>(() => builder.ShowGlyphs([1, 2], [0]));
+        Assert.Throws<ArgumentException>(() => builder.ShowGlyphs([1, 0], [0, 0]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => builder.ShowGlyphs([1, 2], [double.NaN, 0]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => builder.ShowGlyphs([1, 2], [0, double.PositiveInfinity]));
+        builder.SetFont(_font, 0);
+        Assert.Throws<InvalidOperationException>(() => builder.ShowGlyphs([1], [0.5]));
+        builder.EndText();
+
+        Assert.Equal("BT\n/F1 12 Tf\n/F1 0 Tf\nET\n", Finish(builder));
+    }
+
     public void Dispose() => _file.Dispose();
 
     private static string Finish(ContentStreamBuilder builder) => Encoding.Latin1.GetString(builder.Finish());

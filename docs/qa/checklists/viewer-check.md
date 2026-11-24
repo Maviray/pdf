@@ -1,10 +1,11 @@
 # Viewer check
 
-Status: 2026-11-23
+Status: 2026-11-24
 
 A check by hand that the gate files open cleanly and read correctly in the viewers CI can't run. It is repeated for each release (design document, Testing and validation).
 - **The hello-world file** is the P0 gate.
 - **The fonts file**, the P1 fonts gate (fonts spec F-15), joins the 0.1.0 release check. It can be checked as soon as the fonts work merges, but it isn't a merge condition.
+- **The text file**, the P1 text gate (text spec T-15), joins the 0.1.0 release check the same way.
 
 This checklist is never ticked. For each run, copy the report template at the end to `docs/qa/reports/YYYY-MM-DD-viewer-check-run.md`, record the verdicts there, and commit it.
 
@@ -15,6 +16,7 @@ This checklist is never ticked. For each run, copy the report template at the en
 3. Open the files under `Maviray.Pdf.Tests/bin/Release/net10.0/generated/`. If a path differs, search the unzipped folder for the file name.
    - The hello-world file: `HelloWorldTests/HelloWorldPassesEveryValidator.pdf`.
    - The fonts file: `FontsGateTests/FontsGatePassesEveryValidator.pdf`. Its expected text, `FontsGatePassesEveryValidator.txt`, is beside it.
+   - The text file: `TextGateTests/TextGatePassesEveryCheck.pdf`. Its expected text, `TextGatePassesEveryCheck.txt`, is beside it.
 4. Note each PDF's SHA-256 for the report: `Get-FileHash <path> -Algorithm SHA256` in PowerShell. The writer's output is deterministic, so a later commit that produces the same hash is covered by the same verdicts.
 
 The other files in the artifact belong to other tests. Some are broken on purpose, to prove that the validators catch errors, so don't use them for this check.
@@ -53,6 +55,28 @@ The page is A4 in portrait and white.
   - The schwa `Ə` and `ə` show as letters of their own, not as an `e` turned around or a box.
   - The italic blocks lean, and the bold blocks are heavier.
 
+## What the text page should look like
+
+The page is A4 in portrait and white.
+- **Text:** six paragraphs of Noto Sans at 10 pt, one below the other, and nothing else. Every paragraph's left edge is 2.5 cm from the page's left edge.
+- **Position:** the first paragraph starts about 1.3 cm from the top, and the last ends about 28.3 cm from the top. A small gap separates the paragraphs.
+- **The paragraphs, from the top:**
+
+  | Paragraph | What it looks like |
+  | --- | --- |
+  | 1 | German prose about an invoice, 13 lines, ragged on the right, in a column about 7.8 cm wide |
+  | 2 | The same prose in 18 lines, each centred in a column about 5.6 cm wide |
+  | 3 | The same 18 lines, each flush with the right edge of that column, about 8.2 cm from the page's left edge |
+  | 4 | Five lines in German, with a bold `Wichtig:`, an italic sentence, a larger `1.234,56 €`, an underlined `ist bis zum 30. Dezember`, a struck-through `nicht bis zum 15.` and a spaced-out `BEZAHLT`. After `folgt.` a new line starts, and a Turkish, a Russian and a Greek sentence run on across the last three lines |
+  | 5 | `DE893704004` and, on the next line, `40532013000` |
+  | 6 | `Köln, München` |
+
+- **What to look out for:**
+  - Line 11 of the first paragraph ends with `Kunden-`, and the next line starts with `nummer`. No hyphen shows inside `Kundenbetreuung`.
+  - `z. B.`, `1.234,56 €` and `20 €` never break across two lines.
+  - In the fourth paragraph, the underline runs under `ist` at the end of the third line, but not under the space after it, and goes on under `bis zum 30. Dezember` at the start of the fourth. The strike runs through `nicht bis zum 15.` at the end of the fourth line.
+  - No character shows as an empty box or a question mark, and every accent sits on its own letter: the dots of `İ` and `ö`, `ı` with no dot, the cedilla of `ş`, the two dots of `ё`, and the Greek tonos.
+
 ## Viewers
 
 | Viewer | Engine | Make sure that |
@@ -66,7 +90,7 @@ The page is A4 in portrait and white.
 
 1. **Opens cleanly.** The file opens with no error, warning or "repaired" message.
 2. **Looks right.**
-   - The page matches its description above. For the hello-world file, that's the four elements, their sizes, positions and colours, and nothing else. For the fonts file, it's the 24 lines in their styles, with every character and accent drawn.
+   - The page matches its description above. For the hello-world file, that's the four elements, their sizes, positions and colours, and nothing else. For the fonts file, it's the 24 lines in their styles, with every character and accent drawn. For the text file, it's the six paragraphs, their alignment and their decorations.
    - Check the page size in the viewer's document properties:
      - Acrobat: *File › Properties › Page Size*;
      - Chrome: *⋮ › Document properties*;
@@ -84,16 +108,17 @@ The page is A4 in portrait and white.
      ```
 
      It prints `Exact` when the text matches. Otherwise it prints each copied line as character codes, so a hyphen (U+002D) instead of the en dash (U+2013), or a no-break space, shows up.
-   - For the fonts file, the expected lines come from its `.txt` file, so no character needs typing. Put that file's path in the first line:
+   - For the fonts file and the text file, the expected lines come from the file's `.txt`, so no character needs typing. Put the path of that `.txt` in the first line: `FontsGatePassesEveryValidator.txt` for the fonts file, and `TextGatePassesEveryCheck.txt` for the text file:
 
      ```powershell
-     $expected = @(Get-Content -Encoding UTF8 '<path>\FontsGatePassesEveryValidator.txt')
+     $expected = @(Get-Content -Encoding UTF8 '<path>\<name>.txt')
      $actual = @(Get-Clipboard | ForEach-Object TrimEnd | Where-Object { $_ })
      if ([string]::Equals(($actual -join "`n"), ($expected -join "`n"), [StringComparison]::Ordinal)) { 'Exact' }
      else { 0..([Math]::Max($expected.Count, $actual.Count) - 1) | Where-Object { -not [string]::Equals($expected[$_], $actual[$_], [StringComparison]::Ordinal) } | ForEach-Object { "Line $($_ + 1): $($actual[$_])"; (([string]$actual[$_]).ToCharArray() | ForEach-Object { 'U+{0:X4}' -f [int]$_ }) -join ' ' } }
      ```
 
-     It prints `Exact` when all 24 lines match, in order. Otherwise, for each line that differs, it prints the line number, the copied line and its character codes. A missing line shows as an empty copied line.
+     It prints `Exact` when every line matches, in order: 24 for the fonts file, 60 for the text file. Otherwise, for each line that differs, it prints the line number, the copied line and its character codes. A missing line shows as an empty copied line.
+   - The text file holds characters that viewers may paste differently: the no-break spaces U+00A0 and U+202F, and the U+00AD at the end of line 11. A viewer may paste such a space as a space (U+0020), or drop the U+00AD or paste it as a hyphen (U+002D). A viewer that drops it may also join line 11 to line 12, so every later line shows as different, one line on. Such a difference is recorded in the notes, and it doesn't fail the file. Any other difference does.
    - Line breaks, blank lines and spaces at the end of a line don't count, because viewers paste them differently. Every character within each line must match.
 4. **Acrobat only: no repair.** Close the file. Acrobat must not ask whether to save changes, because asking means it repaired the file.
 
@@ -121,6 +146,17 @@ Checklist: [viewer-check.md](../checklists/viewer-check.md). Files from the `gen
 ## Fonts file
 
 `FontsGateTests/FontsGatePassesEveryValidator.pdf`, SHA-256 `<hash>`.
+
+| Viewer | Version | Opens cleanly | Looks right | Text copies exactly | No repair (Acrobat) | Verdict |
+| --- | --- | --- | --- | --- | --- | --- |
+| Adobe Acrobat Reader | | | | | | |
+| Google Chrome | | | | | n/a | |
+| Mozilla Firefox | | | | | n/a | |
+| macOS Preview | | | | | n/a | |
+
+## Text file
+
+`TextGateTests/TextGatePassesEveryCheck.pdf`, SHA-256 `<hash>`.
 
 | Viewer | Version | Opens cleanly | Looks right | Text copies exactly | No repair (Acrobat) | Verdict |
 | --- | --- | --- | --- | --- | --- | --- |
